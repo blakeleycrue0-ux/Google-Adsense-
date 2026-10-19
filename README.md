@@ -120,7 +120,7 @@ El sitio `voltio0` se despliega desde la rama de producción configurada en Netl
 
 - **Almacenamiento:** se usa Netlify Blobs automáticamente (contenido, ajustes, contadores e imágenes subidas). No hace falta ningún servicio externo. Las tiendas de Blobs son comunes a producción y a las previsualizaciones.
 - **Búsquedas de imágenes:** se ejecutan en el backend de Netlify, que tiene salida a internet. Las claves solo existen como variables de entorno del sitio.
-- **Automatización:** la función programada `voltio-cron` (cada hora, minuto 7 UTC) lanza la detección RSS y las propuestas de imágenes; `voltio-deploy-check` comprueba almacenamiento y proveedores tras cada despliegue y deja el resultado en los registros con el prefijo `[voltio-diagnostico]`.
+- **Automatización:** la función programada `voltio-cron` (cada hora, minuto 7 UTC) lanza la detección RSS y las propuestas de imágenes; `voltio-deploy-check` comprueba almacenamiento y proveedores tras cada despliegue de producción y deja el resultado en los registros con el prefijo `[voltio-diagnostico]`. Si una llamada se rechaza, el motivo aparece con el prefijo `[voltio-cron-auth]` (por ejemplo, falta `CRON_SECRET`). Las variables deben estar disponibles en el ámbito «Functions» y «Runtime», y se aplican en el siguiente despliegue.
 - **Variables:** `SESSION_SECRET`, `CRON_SECRET`, `NEXT_PUBLIC_SITE_URL`, `ADMIN_EMAIL` y `ADMIN_PASSWORD` (primera cuenta); opcionales `PEXELS_API_KEY`, `OPENVERSE_CLIENT_ID` y `OPENVERSE_CLIENT_SECRET`.
 
 ## Monetización
