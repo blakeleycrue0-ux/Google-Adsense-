@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cronAuthorized } from "@/lib/cron-auth";
+import { db } from "@/lib/db";
 import { ingest } from "@/lib/ingest";
 import { autoPropose } from "@/lib/images/search";
 
@@ -18,6 +19,9 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
   const started = Date.now();
+  // Al principio, porque Netlify solo conserva de forma fiable las primeras líneas de cada ejecución.
+  const totals = await db().counters("auto:").catch(() => ({}) as Record<string, number>);
+  console.warn(`[voltio-ingest] acumulado: ${Object.entries(totals).map(([k, v]) => `${k.slice(5)}=${v}`).join(" ") || "sin datos"}`);
   // RSS e imágenes en paralelo: las imágenes de lo ya detectado no esperan a los feeds.
   // Las noticias nuevas de esta ejecución reciben imagen en la siguiente.
   // Cada parte informa de su propio error sin tumbar a la otra.

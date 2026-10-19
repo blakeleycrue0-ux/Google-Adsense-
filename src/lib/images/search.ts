@@ -178,6 +178,7 @@ async function autoPublish(s: ImageSearch): Promise<boolean> {
     } catch (e) {
       // Descarga demasiado grande o formato no válido: se prueba la siguiente.
       console.warn(`[voltio-propuestas] ${s.id}: no se pudo importar ${c.key}: ${(e as Error).message}`);
+      await db().increment("auto:importacion-fallida").catch(() => undefined);
     }
   }
   return false;
@@ -235,6 +236,12 @@ export async function autoPropose(limit = 8, { budgetMs = 24_000 }: { budgetMs?:
     for (const e of s.errors) if (!summary.errors.includes(`${e.provider}: ${e.message}`)) summary.errors.push(`${e.provider}: ${e.message}`);
   }
   if (summary.published) revalidatePath("/", "layout");
+  // Totales acumulados (se consultan al empezar la siguiente ejecución y en el diagnóstico).
+  await Promise.all([
+    summary.searched && db().increment("auto:buscadas", summary.searched),
+    summary.published && db().increment("auto:publicadas", summary.published),
+    summary.errors.length && db().increment("auto:errores-proveedor", summary.errors.length),
+  ]).catch(() => undefined);
   return summary;
 }
 
