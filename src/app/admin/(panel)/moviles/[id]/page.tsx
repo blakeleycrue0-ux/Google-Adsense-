@@ -61,7 +61,11 @@ export default async function PhoneEditor({ params }: PageProps<"/admin/moviles/
               <p className="text-[13px] text-muted">
                 {!phone ? "Guarda la ficha para buscar su fotografía." : phone.image.illustrative ? "Ilustración de demostración: pendiente de una fotografía autorizada del modelo." : phone.image.meta ? `✓ ${phone.image.meta.licenseName}${phone.image.meta.author ? ` · ${phone.image.meta.author}` : ""}` : "Imagen sin procedencia registrada."}
               </p>
-              {phone && <Link href={`/admin/imagenes/phone/${phone.id}`} className="btn-secondary btn-sm">Gestionar fotografía</Link>}
+              {phone && (
+                <Link href={phone.deviceId ? `/admin/imagenes/biblioteca/${phone.deviceId}` : `/admin/imagenes/phone/${phone.id}`} className="btn-secondary btn-sm">
+                  {phone.deviceId ? "Fotos en la biblioteca de móviles" : "Gestionar fotografía"}
+                </Link>
+              )}
               <Field label="Texto alternativo"><input name="imageAlt" defaultValue={phone?.image.alt} className="field" /></Field>
               <Field label="Colores comercializados" hint="Separados por comas (p. ej. negro, azul). Se usan para descartar fotos de otra variante de color."><input name="colors" defaultValue={phone?.colors?.join(", ")} className="field" /></Field>
             </div>

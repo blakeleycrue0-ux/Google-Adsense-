@@ -3,7 +3,8 @@ import Link from "next/link";
 import { PageHeader } from "@/components/site/PageHeader";
 import { ImageCredit } from "@/components/ui/ImageCredit";
 import { Photo } from "@/components/ui/Photo";
-import { getPhones, getPublishedPosts } from "@/lib/content";
+import { getDevices, getPhones, getPublishedPosts } from "@/lib/content";
+import { approvedPhotos, slotLabel } from "@/lib/devices";
 import { phoneHref, phoneName } from "@/lib/phones";
 
 export const revalidate = 300;
@@ -15,10 +16,16 @@ export const metadata: Metadata = {
 };
 
 export default async function CreditsPage() {
-  const [posts, phones] = await Promise.all([getPublishedPosts(), getPhones()]);
+  const [posts, phones, devices] = await Promise.all([getPublishedPosts(), getPhones(), getDevices()]);
   const rows = [
     ...posts.filter((p) => p.cover.src && p.cover.meta).map((p) => ({ key: p.id, href: `/noticias/${p.slug}`, label: p.title, image: p.cover })),
     ...phones.filter((p) => p.image.meta).map((p) => ({ key: p.id, href: phoneHref(p), label: phoneName(p), image: p.image })),
+    // Vistas frontal y trasera aprobadas en la biblioteca de móviles.
+    ...phones.flatMap((p) =>
+      approvedPhotos(p.deviceId ? devices.get(p.deviceId) : undefined)
+        .filter((v) => v.slot !== "main")
+        .map((v) => ({ key: `${p.id}-${v.slot}`, href: phoneHref(p), label: `${phoneName(p)} · ${slotLabel(v.slot).toLowerCase()}`, image: v.image })),
+    ),
   ];
   return (
     <>

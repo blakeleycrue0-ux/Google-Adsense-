@@ -1,0 +1,47 @@
+[
+ {
+  "deviceId": "apple-iphone-13",
+  "slot": "back",
+  "sourceUrl": "https://commons.wikimedia.org/wiki/File:IPhone_13.jpg",
+  "author": "Kskhh",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+  "note": "Fotografía real blanca trasera; verificar encuadre y mantener atribución"
+ },
+ {
+  "deviceId": "apple-iphone-13",
+  "slot": "back",
+  "sourceUrl": "https://commons.wikimedia.org/wiki/File:IPhone_13,_January_28,_2024.jpg",
+  "author": "茅野ふたば",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+  "note": "Segunda opción del mismo modelo; comprobar descripción y uso"
+ },
+ {
+  "deviceId": "samsung-galaxy-s24",
+  "slot": "main",
+  "sourceUrl": "https://commons.wikimedia.org/wiki/File:Samsung_Galaxy_S24.jpg",
+  "author": "Vis M",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+  "note": "Fotografía real; comprobar si el encuadre sirve para portada"
+ },
+ {
+  "deviceId": "samsung-galaxy-s24",
+  "slot": "main",
+  "sourceUrl": "https://commons.wikimedia.org/wiki/File:Samsung_Galaxy_S24_01.jpg",
+  "author": "verificar en la ficha",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+  "note": "Alternativa; comprobar autor antes de usar"
+ },
+ {
+  "deviceId": "samsung-galaxy-s24-fe",
+  "slot": "main",
+  "sourceUrl": "https://commons.wikimedia.org/wiki/File:Samsung_Galaxy_S24_FE_2024.jpg",
+  "author": "Captainmorlypogi1959",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+  "note": "Comprobar que la fotografía retrata el dispositivo indicado"
+ }
+]

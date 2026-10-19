@@ -114,6 +114,19 @@ Las fotografías se gestionan en **Panel → Imágenes**. El sistema propone, co
 
 > Los proveedores requieren salida a internet hacia sus dominios. Si un proveedor no responde, el panel muestra el error real («Comprobar conexión»); nunca se simulan resultados.
 
+## Biblioteca de móviles
+
+Catálogo cerrado de móviles (`src/data/catalogo/catalogo.json`, importado de `voltio_biblioteca_movil.zip`): 99 modelos de 2020 a 2026, 54 de ellos prioritarios (fase 1). Cada dispositivo tiene tres vistas: **portada** (imprescindible), **frontal** y **trasera**.
+
+- **Clave:** `{marca}-{modelo}` normalizada («+» cuenta como «plus»: Galaxy S24+ ≠ Galaxy S24). Las fichas existentes se enlazan por esa clave (`deviceId`) sin modificar ningún otro dato.
+- **Importación idempotente:** Panel → Imágenes → Biblioteca de móviles → «Importar fase 1 (54)» o «Ampliar a los 99». Reimportar solo actualiza la identidad (marca, modelo, año…) y nunca toca las fotos guardadas.
+- **Fotos:** se suben, se importan por URL (con permiso) o desde una página de Wikimedia Commons. De Commons se leen automáticamente la licencia, el autor y las categorías; solo se aceptan licencias con uso comercial y modificación. Toda foto entra como **propuesta**.
+- **Aprobación manual:** hay que confirmar que la foto muestra exactamente ese modelo. No se puede aprobar si falta el autor o la página de origen (CC BY / CC BY-SA), o el permiso (prensa o tiendas). Se registran licencia, autor, origen, cambios realizados, fecha y aprobador.
+- **Web:** solo se muestran fotos reales, aprobadas y con licencia completa. La portada aprobada sustituye a la imagen de la ficha en fichas, guías y comparativas; la frontal y la trasera aparecen en la ficha. Sin foto aprobada se mantiene la ilustración actual. Las rutas sugeridas del ZIP (`/moviles/…/portada.webp`) no se usan: no son fotos.
+- **Seguridad:** la importación por URL bloquea redes privadas (también tras redirecciones) y comprueba tipo, tamaño (≤ 25 MB, ≤ 80 megapíxeles) y formato real con sharp (no se aceptan SVG). Quitar una foto exige confirmarlo y el archivo se conserva en Medios.
+- **Almacenamiento:** las fotos se guardan con el almacenamiento configurado (ver «Almacenamiento»). Con `STORAGE_DRIVER=file` en Netlify el sistema de ficheros es de solo lectura y no se pueden subir fotos desde la web publicada.
+- **Candidatas:** `src/data/catalogo/candidatas-wikimedia.json` (5 páginas de Commons) aparece en la ficha de cada dispositivo con un botón para importarla; aun así hay que revisarla y aprobarla.
+
 ## Despliegue en Netlify
 
 El sitio `voltio0` se despliega desde la rama de producción configurada en Netlify. En Netlify:
