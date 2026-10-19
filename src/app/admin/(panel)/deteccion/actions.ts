@@ -19,7 +19,7 @@ export async function runIngest(_: ActionResult, form: FormData): Promise<Action
   const started = Date.now();
   const r = await ingest(sourceId);
   // Propuestas de imagen para lo detectado (limitado para respetar las cuotas y el límite de 30 s).
-  const images = r.added ? await autoPropose(Math.min(r.added, 10), { budgetMs: Math.max(0, 15_000 - (Date.now() - started)) }) : null;
+  const images = r.added ? await autoPropose(Math.min(r.added, 10), { budgetMs: 24_000 - (Date.now() - started) }) : null;
   revalidatePath("/admin", "layout");
   const errors = r.sources.filter((s) => s.error);
   return {

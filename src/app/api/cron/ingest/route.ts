@@ -16,8 +16,12 @@ export async function GET(req: Request) {
   }
   const started = Date.now();
   const report = await ingest();
+  const rssMs = Date.now() - started;
   // Propone imágenes para lo detectado y para contenidos pendientes. Nunca aprueba ni publica.
   // Se ajusta al tiempo que queda antes del límite de 30 s de Netlify.
-  const images = await autoPropose(10, { budgetMs: Math.max(0, 15_000 - (Date.now() - started)) });
+  const images = await autoPropose(10, { budgetMs: 24_000 - rssMs });
+  console.warn(
+    `[voltio-ingest] rss: ${report.added} nuevas en ${rssMs}ms · imágenes: ${images.proposed} propuestas de ${images.searched} (quedan ${images.pending}) · total ${Date.now() - started}ms`,
+  );
   return NextResponse.json({ ...report, images });
 }

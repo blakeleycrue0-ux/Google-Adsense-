@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import type { DetectedItem, ImageCandidate, ImageProviderId, ImageSearch, ImageTargetType, Phone, Post } from "@/lib/types";
 import { LICENSES } from "./licenses";
 import { matchPhone, matchTopic, postKeywords, qualityScore } from "./matching";
-import { ProviderError, providerInfo, searchProvider } from "./providers";
+import { PROVIDER_TIMEOUT_MS, ProviderError, providerInfo, searchProvider } from "./providers";
 
 export { bestCandidate, imageState, searchId, type ImageState } from "./state";
 import { bestCandidate, imageState, searchId } from "./state";
@@ -150,11 +150,13 @@ export async function getSearch(type: ImageTargetType, id: string) {
 /**
  * Propuestas automáticas: busca imágenes para noticias detectadas, artículos y
  * fichas que aún no tienen imagen aprobada. Nunca aprueba ni publica nada.
- * No empieza búsquedas nuevas pasado `budgetMs` (las funciones de Netlify se
- * cortan a los 30 s); lo pendiente se retoma en la siguiente ejecución.
+ * Solo empieza una búsqueda si puede terminar dentro de `budgetMs` (las
+ * funciones de Netlify se cortan a los 30 s); lo pendiente se retoma en la
+ * siguiente ejecución.
  */
-export async function autoPropose(limit = 8, { budgetMs = 18_000 }: { budgetMs?: number } = {}) {
-  const deadline = Date.now() + budgetMs;
+export async function autoPropose(limit = 8, { budgetMs = 24_000 }: { budgetMs?: number } = {}) {
+  // Peor caso de una búsqueda: el tiempo de espera de los proveedores más el guardado.
+  const deadline = Date.now() + budgetMs - (PROVIDER_TIMEOUT_MS + 1_000);
   const [posts, phones, detected, searches] = await Promise.all([
     db().list("posts"),
     db().list("phones"),

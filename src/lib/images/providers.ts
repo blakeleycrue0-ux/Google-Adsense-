@@ -50,13 +50,16 @@ export function userAgent() {
 
 export class ProviderError extends Error {}
 
+/** Tiempo máximo de espera de cada proveedor. */
+export const PROVIDER_TIMEOUT_MS = 10_000;
+
 async function getJson<T>(url: string, init: RequestInit = {}): Promise<T> {
   let res: Response;
   try {
     res = await fetch(url, {
       ...init,
       headers: { "User-Agent": userAgent(), Accept: "application/json", ...init.headers },
-      signal: AbortSignal.timeout(12_000),
+      signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
       cache: "no-store",
     });
   } catch (e) {
