@@ -20,16 +20,22 @@ export async function GET(req: Request) {
   const started = Date.now();
   // RSS e imágenes en paralelo: las imágenes de lo ya detectado no esperan a los feeds.
   // Las noticias nuevas de esta ejecución reciben imagen en la siguiente.
+  // Cada parte informa de su propio error sin tumbar a la otra.
+  const failed = (part: string) => (e: unknown) => {
+    const error = `${part}: ${(e as Error).message}`.slice(0, 300);
+    console.warn(`[voltio-ingest] error en ${error}`);
+    return { error };
+  };
   const rss = ingest().then((report) => {
     console.warn(`[voltio-ingest] rss: ${report.added} nuevas en ${Date.now() - started}ms`);
     return report;
-  });
+  }, failed("rss"));
   const imagesWork = autoPropose(10, { budgetMs: 18_000 }).then((images) => {
     console.warn(
       `[voltio-ingest] imágenes: ${images.published} publicadas, ${images.proposed} con propuesta, ${images.searched} buscadas (quedan ${images.pending}) en ${Date.now() - started}ms`,
     );
     return images;
-  });
+  }, failed("imágenes"));
   const work = Promise.all([rss, imagesWork]).then(([report, images]) => ({ ...report, images }));
 
   let timer: ReturnType<typeof setTimeout> | undefined;
