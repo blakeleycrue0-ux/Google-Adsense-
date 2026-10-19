@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cronAuthorized } from "@/lib/cron-auth";
 import { db } from "@/lib/db";
 import { providerInfo, searchProvider } from "@/lib/images/providers";
 
@@ -11,8 +12,7 @@ export const maxDuration = 60;
  * registros del servidor con el prefijo [voltio-diagnostico].
  */
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!cronAuthorized(req, "diagnostico")) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
   const storage: { kind: string; ok: boolean; error?: string } = { kind: db().kind, ok: false };

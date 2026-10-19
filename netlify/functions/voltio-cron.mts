@@ -5,13 +5,11 @@ import type { Config } from "@netlify/functions";
  * las propuestas automáticas de imágenes. Nada se aprueba ni se publica solo.
  * Las programadas solo se ejecutan en el despliegue de producción.
  */
-const run = async () => {
-  const base = Netlify.env.get("URL");
-  const secret = Netlify.env.get("CRON_SECRET");
-  if (!base || !secret) {
-    console.log("[voltio-cron] Falta URL o CRON_SECRET; no se ejecuta.");
-    return;
-  }
+const run = async (req: Request) => {
+  // La petición programada llega al dominio del propio sitio: sirve de respaldo si falta URL.
+  const base = Netlify.env.get("URL") || new URL(req.url).origin;
+  const secret = Netlify.env.get("CRON_SECRET") ?? "";
+  // Se llama aunque falte la clave: el servidor rechaza la petición y deja el motivo en sus registros.
   try {
     const res = await fetch(`${base}/api/cron/ingest`, {
       headers: { Authorization: `Bearer ${secret}` },

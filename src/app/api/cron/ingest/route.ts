@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cronAuthorized } from "@/lib/cron-auth";
 import { ingest } from "@/lib/ingest";
 import { autoPropose } from "@/lib/images/search";
 
@@ -10,8 +11,7 @@ export const maxDuration = 60;
  * (p. ej. desde Vercel Cron o un cron del servidor cada 15 minutos).
  */
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!cronAuthorized(req, "ingest")) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
   const report = await ingest();
