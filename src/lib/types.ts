@@ -11,6 +11,115 @@ export interface ImageRef {
   illustrative?: boolean;
   width?: number;
   height?: number;
+  /** Procedencia, licencia y aprobación. Ausente en imágenes antiguas. */
+  meta?: ImageMeta;
+}
+
+/** Proveedores de imágenes admitidos por el sistema. */
+export type ImageProviderId =
+  | "upload"
+  | "wikimedia"
+  | "openverse"
+  | "pexels"
+  | "unsplash"
+  | "feed"
+  | "press"
+  | "retailer"
+  | "demo";
+
+/**
+ * Licencias reconocidas. Solo se pueden seleccionar las que permiten uso
+ * comercial y la adaptación técnica (redimensionar/recortar): ver lib/images/licenses.ts.
+ */
+export type LicenseCode =
+  | "own"
+  | "cc0"
+  | "pdm"
+  | "cc-by"
+  | "cc-by-sa"
+  | "pexels"
+  | "unsplash"
+  | "press"
+  | "retailer"
+  | "cc-by-nc"
+  | "cc-by-nd"
+  | "cc-by-nc-sa"
+  | "cc-by-nc-nd"
+  | "unknown";
+
+export type ImageStatus = "approved" | "proposed" | "pending";
+
+export interface ImageMeta {
+  status: ImageStatus;
+  provider: ImageProviderId;
+  license: LicenseCode;
+  licenseName: string;
+  licenseUrl?: string;
+  author?: string;
+  authorUrl?: string;
+  /** Página de origen de la imagen (ficha en Commons, Pexels, nota de prensa…). */
+  sourceUrl?: string;
+  /** Título original de la imagen en la fuente. */
+  title?: string;
+  /** Detalle del permiso (imágenes de prensa, fuentes RSS autorizadas, afiliación). */
+  permissionNote?: string;
+  attributionRequired: boolean;
+  /** Se sirve desde el CDN del proveedor (obligatorio en Unsplash y programas de afiliación). */
+  hotlinked?: boolean;
+  /** Punto de interés para el recorte con object-fit: cover (porcentajes). */
+  focalX?: number;
+  focalY?: number;
+  /** Variante/color mostrado, para comprobar que coincide con el producto. */
+  variant?: string;
+  externalId?: string;
+  approvedAt?: string;
+  approvedBy?: string;
+}
+
+/** Imagen candidata devuelta por un proveedor, pendiente de selección. */
+export interface ImageCandidate {
+  key: string;
+  provider: ImageProviderId;
+  externalId: string;
+  title: string;
+  description?: string;
+  previewUrl: string;
+  fullUrl: string;
+  width: number;
+  height: number;
+  license: LicenseCode;
+  licenseName: string;
+  licenseUrl?: string;
+  author?: string;
+  authorUrl?: string;
+  sourceUrl: string;
+  permissionNote?: string;
+  /** Se debe enlazar desde el CDN del proveedor en vez de copiarla. */
+  hotlink?: boolean;
+  /** URL que hay que notificar al seleccionar (Unsplash download_location). */
+  trackUrl?: string;
+  usable: boolean;
+  blockedReason?: string;
+  /** Coincide con el contenido (modelo exacto o tema del artículo). */
+  matched?: boolean;
+  score: number;
+  reasons: string[];
+}
+
+export type ImageTargetType = "post" | "phone" | "detected";
+
+/** Resultado de una búsqueda de imágenes para un contenido concreto. */
+export interface ImageSearch {
+  id: ID;
+  targetType: ImageTargetType;
+  targetId: ID;
+  query: string;
+  createdAt: string;
+  candidates: ImageCandidate[];
+  /** Errores por proveedor (sin clave, bloqueado por red, límite de uso…). */
+  errors: { provider: ImageProviderId; message: string }[];
+  /** Origen de la búsqueda: automática (ingesta/cron) o manual desde el panel. */
+  origin: "auto" | "manual";
 }
 
 export interface Category {
@@ -107,6 +216,8 @@ export interface PriceOffer {
 
 export interface Phone {
   id: ID;
+  /** Colores comercializados (para descartar fotografías de otra variante). */
+  colors?: string[];
   slug: string;
   brand: string;
   model: string;
@@ -197,6 +308,12 @@ export interface NewsSource {
   lastFetchedAt?: string;
   lastError?: string;
   lastItemCount?: number;
+  /**
+   * La fuente concede permiso para reutilizar las imágenes de su feed
+   * (p. ej. sala de prensa con condiciones verificadas). Por defecto, no.
+   */
+  imagesReusable?: boolean;
+  imagePermissionNote?: string;
 }
 
 export type DetectedStatus = "new" | "drafted" | "discarded";
@@ -219,6 +336,8 @@ export interface DetectedItem {
   similarity?: number;
   status: DetectedStatus;
   draftPostId?: ID;
+  /** Imagen incluida por la fuente en el feed (solo se usa si la fuente lo autoriza). */
+  feedImage?: { url: string; credit?: string; copyright?: string; license?: string };
 }
 
 export type AdPlacement =
@@ -283,6 +402,7 @@ export interface MediaItem {
   size: number;
   mime: string;
   uploadedAt: string;
+  meta?: ImageMeta;
 }
 
 export type Role = "admin" | "editor";
@@ -321,6 +441,7 @@ export interface Collections {
   media: MediaItem;
   users: User;
   messages: ContactMessage;
+  imageSearches: ImageSearch;
 }
 
 export type CollectionName = keyof Collections;

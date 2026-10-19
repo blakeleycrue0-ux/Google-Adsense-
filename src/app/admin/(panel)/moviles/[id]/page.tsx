@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActionForm, ConfirmButton, SubmitButton } from "@/components/admin/forms";
-import { ImageInput } from "@/components/admin/ImageInput";
 import { AdminPage, Field, Panel } from "@/components/admin/ui";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -13,7 +12,7 @@ import { deletePhone, savePhone } from "../actions";
 export default async function PhoneEditor({ params }: PageProps<"/admin/moviles/[id]">) {
   await requireUser();
   const { id } = await params;
-  const [phones, stores, links, media] = await Promise.all([db().list("phones"), db().list("stores"), db().list("links"), db().list("media")]);
+  const [phones, stores, links] = await Promise.all([db().list("phones"), db().list("stores"), db().list("links")]);
   const phone: Phone | undefined = id === "nuevo" ? undefined : phones.find((p) => p.id === id);
   if (id !== "nuevo" && !phone) notFound();
   const s = phone?.specs;
@@ -52,10 +51,20 @@ export default async function PhoneEditor({ params }: PageProps<"/admin/moviles/
           </div>
         </Panel>
 
-        <Panel title="Imagen" description="Usa imágenes oficiales de prensa o propias, con derechos de uso.">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <ImageInput name="imageSrc" defaultValue={phone?.image.src} library={media.map((m) => ({ url: m.url, alt: m.alt }))} altFieldName="imageAlt" />
-            <Field label="Texto alternativo"><input name="imageAlt" defaultValue={phone?.image.alt} className="field" /></Field>
+        <Panel title="Fotografía" description="Debe mostrar el modelo exacto. Se busca, se comprueba la licencia y se aprueba en el gestor de imágenes.">
+          <div className="grid gap-4 sm:grid-cols-[120px_1fr]">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-surface">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {phone?.image.src && <img src={phone.image.src} alt="" className="h-full w-full object-contain p-1" />}
+            </div>
+            <div className="space-y-3">
+              <p className="text-[13px] text-muted">
+                {!phone ? "Guarda la ficha para buscar su fotografía." : phone.image.illustrative ? "Ilustración de demostración: pendiente de una fotografía autorizada del modelo." : phone.image.meta ? `✓ ${phone.image.meta.licenseName}${phone.image.meta.author ? ` · ${phone.image.meta.author}` : ""}` : "Imagen sin procedencia registrada."}
+              </p>
+              {phone && <Link href={`/admin/imagenes/phone/${phone.id}`} className="btn-secondary btn-sm">Gestionar fotografía</Link>}
+              <Field label="Texto alternativo"><input name="imageAlt" defaultValue={phone?.image.alt} className="field" /></Field>
+              <Field label="Colores comercializados" hint="Separados por comas (p. ej. negro, azul). Se usan para descartar fotos de otra variante de color."><input name="colors" defaultValue={phone?.colors?.join(", ")} className="field" /></Field>
+            </div>
           </div>
         </Panel>
 

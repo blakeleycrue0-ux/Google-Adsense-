@@ -9,7 +9,8 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "images:demo": "node scripts/generate-demo-images.mjs",
-    "data:reset": "node -e \"require('fs').rmSync(process.env.DATA_DIR||'data',{recursive:true,force:true});console.log('Datos locales eliminados: se usará el contenido de demostración.')\""
+    "data:reset": "node -e \"require('fs').rmSync(process.env.DATA_DIR||'data',{recursive:true,force:true});console.log('Datos locales eliminados: se usar\u00e1 el contenido de demostraci\u00f3n.')\"",
+    "test": "vitest run"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
@@ -27,14 +28,15 @@
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
-    "@types/node": "^20",
+    "@types/node": "^22.20.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/sanitize-html": "^2.16.2",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.5"
   },
   "engines": {
     "node": ">=20.9"

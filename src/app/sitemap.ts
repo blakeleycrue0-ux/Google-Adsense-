@@ -26,6 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: u("/comparar"), changeFrequency: "weekly", priority: 0.5 },
     { url: u("/ofertas"), changeFrequency: "daily", priority: 0.7 },
     { url: u("/contacto"), changeFrequency: "yearly", priority: 0.3 },
+    { url: u("/creditos-imagenes"), changeFrequency: "weekly", priority: 0.2 },
     ...cats.map((c) => ({ url: u(`/categoria/${c.slug}`), changeFrequency: "daily" as const, priority: 0.7 })),
     ...posts.map((p) => ({
       url: u(`/noticias/${p.slug}`),

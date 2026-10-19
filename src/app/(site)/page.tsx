@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { Photo } from "@/components/ui/Photo";
 import Link from "next/link";
 import { Ad } from "@/components/ads/Ad";
 import { AffiliateNote } from "@/components/commerce/AffiliateNote";
@@ -114,7 +114,7 @@ export default async function HomePage() {
                   aria-hidden
                   className="relative mt-5 hidden aspect-[4/3] overflow-hidden rounded-sm bg-surface sm:block"
                 >
-                  <Image src={p.cover.src} alt="" fill sizes="120px" className="img-reveal object-cover transition-transform duration-700 group-hover:scale-[1.04]" />
+                  {p.cover.src && <Photo image={p.cover} alt="" sizes="120px" className="img-reveal transition-transform duration-700 group-hover:scale-[1.04]" />}
                 </Link>
               </li>
             ))}
@@ -229,13 +229,13 @@ export default async function HomePage() {
                 <article className="group">
                   <Link href={postHref(items[0])} className="block">
                     <div className="relative aspect-[16/10] overflow-hidden rounded-sm bg-surface">
-                      <Image
-                        src={items[0].cover.src}
-                        alt={items[0].cover.alt}
-                        fill
-                        sizes="(min-width: 768px) 33vw, 100vw"
-                        className="img-reveal object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                      />
+                      {items[0].cover.src && (
+                        <Photo
+                          image={items[0].cover}
+                          sizes="(min-width: 768px) 33vw, 100vw"
+                          className="img-reveal transition-transform duration-700 group-hover:scale-[1.03]"
+                        />
+                      )}
                     </div>
                     <Kicker post={items[0]} className="mt-4" />
                     <h3 className="headline mt-2 text-[21px] leading-[1.15]">

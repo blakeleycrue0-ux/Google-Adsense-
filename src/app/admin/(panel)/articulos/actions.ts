@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/auth";
 import { db, newId } from "@/lib/db";
 import { madridLocalToISO, slugify } from "@/lib/format";
 import { renderMarkdown } from "@/lib/markdown";
+import { imageState } from "@/lib/images/state";
 import { revalidateSite } from "@/lib/revalidate";
 import type { Post, SourceLink } from "@/lib/types";
 
@@ -19,9 +20,7 @@ const schema = z.object({
   categoryId: z.string().min(1, "Elige una categoría"),
   authorId: z.string().min(1),
   tags: z.string().max(500),
-  coverSrc: z.string().trim().max(500),
-  coverAlt: z.string().trim().max(300),
-  coverCredit: z.string().trim().max(200),
+  coverAlt: z.string().trim().max(300).optional(),
   sources: z.string().max(5000),
   seoTitle: z.string().trim().max(70).optional(),
   seoDescription: z.string().trim().max(170).optional(),
@@ -73,7 +72,12 @@ export async function savePost(_: ActionResult, form: FormData): Promise<ActionR
 
   if (d.intent === "publish" || d.intent === "schedule") {
     if (!d.subtitle) return { ok: false, message: "Añade un subtítulo antes de publicar." };
-    if (!d.coverSrc || !d.coverAlt) return { ok: false, message: "Añade una imagen principal con texto alternativo antes de publicar." };
+    const cover = existing?.cover;
+    const legacyDemo = Boolean(existing?.isDemo && cover?.illustrative);
+    if (!cover?.src || (imageState(cover) !== "approved" && !legacyDemo)) {
+      return { ok: false, message: "Aprueba una imagen principal en el gestor de imágenes antes de publicar." };
+    }
+    if ((d.coverAlt ?? cover.alt).trim().length < 8) return { ok: false, message: "Añade un texto alternativo descriptivo a la imagen principal." };
     if (d.body.trim().length < 300) return { ok: false, message: "El cuerpo es demasiado corto para publicarse." };
   }
   switch (d.intent) {
@@ -109,7 +113,8 @@ export async function savePost(_: ActionResult, form: FormData): Promise<ActionR
     categoryId: d.categoryId,
     authorId: d.authorId,
     tags: d.tags.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 12),
-    cover: { src: d.coverSrc, alt: d.coverAlt, credit: d.coverCredit || undefined, illustrative: existing?.cover.src === d.coverSrc ? existing.cover.illustrative : false },
+    // La imagen se elige en el gestor de imágenes; aquí solo se edita su texto alternativo.
+    cover: existing ? { ...existing.cover, alt: d.coverAlt ?? existing.cover.alt } : { src: "", alt: d.coverAlt ?? "" },
     sources,
     status,
     publishedAt,

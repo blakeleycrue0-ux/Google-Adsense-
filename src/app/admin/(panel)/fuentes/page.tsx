@@ -24,6 +24,13 @@ function SourceForm({ source, categories }: { source?: NewsSource; categories: C
         </Field>
       </div>
       <label className="flex items-center gap-2 text-[13px]"><input type="checkbox" name="active" defaultChecked={source?.active} className="size-4 accent-ink" /> Activa (se consulta en cada detección)</label>
+      <div className="space-y-2 rounded-sm border border-line p-3 text-[13px] sm:col-span-2">
+        <label className="flex items-start gap-2">
+          <input type="checkbox" name="imagesReusable" defaultChecked={source?.imagesReusable} className="mt-0.5 size-4 accent-ink" />
+          <span>La fuente autoriza reutilizar las imágenes de su feed (p. ej. sala de prensa con condiciones de uso verificadas). Si no, sus imágenes nunca se copian.</span>
+        </label>
+        <input name="imagePermissionNote" defaultValue={source?.imagePermissionNote} placeholder="Dónde consta el permiso (URL de las condiciones, acuerdo…)" className="field h-8 text-[12px]" />
+      </div>
       <div className="sm:text-right"><SubmitButton variant={source ? "secondary" : "primary"}>{source ? "Guardar" : "Añadir fuente"}</SubmitButton></div>
     </ActionForm>
   );

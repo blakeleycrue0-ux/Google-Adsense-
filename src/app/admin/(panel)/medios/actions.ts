@@ -6,13 +6,14 @@ import { requireUser } from "@/lib/auth";
 import { db, newId } from "@/lib/db";
 import { slugify } from "@/lib/format";
 import { revalidateSite } from "@/lib/revalidate";
-import type { MediaItem } from "@/lib/types";
+import { LICENSES } from "@/lib/images/licenses";
+import type { ImageMeta, LicenseCode, MediaItem } from "@/lib/types";
 
 const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif"];
 const MAX_BYTES = 8 * 1024 * 1024;
 
 /** Procesa la imagen (WebP, máx. 2000 px) y la guarda en el almacenamiento configurado. */
-export async function uploadImage(file: File, alt: string): Promise<MediaItem> {
+export async function uploadImage(file: File, alt: string, meta?: MediaItem["meta"]): Promise<MediaItem> {
   if (!ALLOWED.includes(file.type)) throw new Error("Formato no admitido. Usa JPG, PNG, WebP, AVIF o GIF.");
   if (file.size > MAX_BYTES) throw new Error("La imagen supera los 8 MB.");
   const input = Buffer.from(await file.arrayBuffer());
@@ -32,17 +33,37 @@ export async function uploadImage(file: File, alt: string): Promise<MediaItem> {
     size: data.length,
     mime: "image/webp",
     uploadedAt: now.toISOString(),
+    meta,
   };
   await db().put("media", item);
   return item;
 }
 
 export async function uploadMedia(_: ActionResult, form: FormData): Promise<ActionResult> {
-  await requireUser();
+  const user = await requireUser();
   const file = form.get("file");
   if (!(file instanceof File) || !file.size) return { ok: false, message: "Selecciona una imagen." };
+  const license = String(form.get("license") ?? "own") as LicenseCode;
+  if (!["own", "press", "cc0", "pdm", "cc-by", "cc-by-sa"].includes(license)) return { ok: false, message: "Licencia no admitida." };
+  const author = String(form.get("author") ?? "").trim();
+  const permissionNote = String(form.get("permissionNote") ?? "").trim();
+  if (license === "press" && !permissionNote) return { ok: false, message: "Indica el permiso de uso de la imagen de prensa." };
+  if ((license === "cc-by" || license === "cc-by-sa") && !author) return { ok: false, message: "Esta licencia exige indicar la autoría." };
+  const meta: ImageMeta = {
+    status: "approved",
+    provider: license === "press" ? "press" : "upload",
+    license,
+    licenseName: LICENSES[license].name,
+    licenseUrl: LICENSES[license].url,
+    author: author || undefined,
+    sourceUrl: String(form.get("sourceUrl") ?? "").trim() || undefined,
+    permissionNote: permissionNote || undefined,
+    attributionRequired: LICENSES[license].attribution,
+    approvedAt: new Date().toISOString(),
+    approvedBy: user.email,
+  };
   try {
-    await uploadImage(file, String(form.get("alt") ?? ""));
+    await uploadImage(file, String(form.get("alt") ?? ""), meta);
   } catch (e) {
     return { ok: false, message: (e as Error).message };
   }
@@ -74,7 +95,9 @@ export async function deleteMedia(form: FormData) {
   await requireUser();
   const item = await db().get("media", String(form.get("id")));
   if (!item) return;
-  const used = (await db().list("posts")).some((p) => p.cover.src === item.url || p.body.includes(item.url));
+  const used =
+    (await db().list("posts")).some((p) => p.cover.src === item.url || p.body.includes(item.url)) ||
+    (await db().list("phones")).some((p) => p.image.src === item.url);
   if (used) return;
   await db().deleteFile(item.path);
   await db().remove("media", item.id);

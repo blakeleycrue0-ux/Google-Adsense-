@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { Photo } from "@/components/ui/Photo";
 import { DemoBadge } from "@/components/ui/Badge";
 import { formatDate, formatPrice } from "@/lib/format";
 import type { Deal, Store } from "@/lib/types";
@@ -30,7 +30,7 @@ export function DealList({ deals, stores }: { deals: Deal[]; stores: Map<string,
         return (
           <li key={d.id} className="group grid grid-cols-[64px_1fr] items-center gap-x-4 gap-y-3 py-4 sm:grid-cols-[72px_1fr_auto_auto] sm:gap-x-6">
             <div className="relative size-16 overflow-hidden rounded-sm bg-surface sm:size-[72px]">
-              {d.image && <Image src={d.image.src} alt={d.image.alt} fill sizes="72px" className="img-reveal object-cover" />}
+              {d.image?.src && <Photo image={d.image} sizes="72px" className="img-reveal" />}
             </div>
             <div className="min-w-0">
               <p className="kicker flex flex-wrap items-center gap-2 text-muted">

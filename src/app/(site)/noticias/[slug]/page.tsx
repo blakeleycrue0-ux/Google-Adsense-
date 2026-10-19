@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import { Photo } from "@/components/ui/Photo";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Ad } from "@/components/ads/Ad";
@@ -9,6 +9,7 @@ import { RowStory } from "@/components/news/Story";
 import { ViewTracker } from "@/components/news/ViewTracker";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { ArrowUpRight } from "@/components/ui/Icons";
+import { ImageCredit } from "@/components/ui/ImageCredit";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { getAuthor, getCategoryMap, getPostBySlug, getPublishedPosts, getRelated, tagSlug } from "@/lib/content";
 import { formatDateTime, formatLongDate, formatTime, readingMinutes } from "@/lib/format";
@@ -141,11 +142,11 @@ export default async function ArticlePage({ params }: PageProps<"/noticias/[slug
 
         <figure className="container-x mt-8">
           <div className="relative mx-auto aspect-[16/10] max-w-[1120px] overflow-hidden rounded-sm bg-surface">
-            <Image src={post.cover.src} alt={post.cover.alt} fill priority sizes="(min-width: 1180px) 1120px, 100vw" className="img-reveal object-cover" />
+            {post.cover.src && <Photo image={post.cover} priority sizes="(min-width: 1180px) 1120px, 100vw" className="img-reveal" />}
           </div>
-          {(post.cover.credit || post.cover.illustrative) && (
+          {post.cover.src && (
             <figcaption className="mx-auto mt-2.5 max-w-[1120px] text-[12px] text-muted">
-              {post.cover.alt}. {post.cover.credit ?? "Imagen ilustrativa"}
+              {post.cover.alt}. <ImageCredit image={post.cover} />
             </figcaption>
           )}
         </figure>

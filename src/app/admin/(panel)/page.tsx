@@ -32,6 +32,7 @@ export default async function Dashboard({ searchParams }: PageProps<"/admin">) {
     { ok: !settings.demoMode, label: "Desactivar el modo demostración (permite la indexación)", href: "/admin/ajustes" },
     { ok: !posts.some((p) => p.isDemo && p.status === "published"), label: "Retirar o revisar los artículos de demostración", href: "/admin/articulos" },
     { ok: !phones.some((p) => p.offers.some((o) => o.source === "demo")), label: "Sustituir los precios de demostración por precios comprobados", href: "/admin/moviles" },
+    { ok: ![...posts.map((p) => p.cover), ...phones.map((p) => p.image)].some((i) => i.illustrative), label: "Sustituir las ilustraciones por fotografías con licencia", href: "/admin/imagenes" },
     { ok: Boolean(settings.legal.ownerName && settings.legal.taxId && settings.contactEmail), label: "Completar los datos legales del titular y el correo de contacto", href: "/admin/ajustes" },
     { ok: !legal.some((l) => l.needsLegalReview), label: "Revisión legal de las páginas de privacidad, cookies y aviso legal", href: "/admin/paginas" },
     { ok: Boolean(process.env.SESSION_SECRET), label: "Definir SESSION_SECRET en el entorno de producción" },

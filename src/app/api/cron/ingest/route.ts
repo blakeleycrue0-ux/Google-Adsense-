@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ingest } from "@/lib/ingest";
+import { autoPropose } from "@/lib/images/search";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -14,5 +15,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
   const report = await ingest();
-  return NextResponse.json(report);
+  // Propone imágenes para lo detectado y para contenidos pendientes. Nunca aprueba ni publica.
+  const images = await autoPropose(10);
+  return NextResponse.json({ ...report, images });
 }

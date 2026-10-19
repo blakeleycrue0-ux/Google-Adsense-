@@ -69,7 +69,25 @@ export function classify(title: string, snippet: string, fallback?: string) {
   return { categoryId: best.id ?? "cat-tecnologia", matched: best.matched };
 }
 
-type FeedItem = { title: string; url: string; snippet: string; publishedAt?: string };
+type FeedItem = { title: string; url: string; snippet: string; publishedAt?: string; image?: DetectedItem["feedImage"] };
+
+type Node = Record<string, unknown>;
+
+/** Imagen declarada por la fuente en el propio feed (media:content, media:thumbnail o enclosure). */
+export function feedImageOf(it: Node): DetectedItem["feedImage"] {
+  const media = [...asArray(it["media:content"] as Node | Node[]), ...asArray((it["media:group"] as Node | undefined)?.["media:content"] as Node | Node[])];
+  const enclosures = asArray(it.enclosure as Node | Node[]);
+  const pick =
+    media.find((m) => String(m["@medium"] ?? "") === "image" || String(m["@type"] ?? "").startsWith("image/")) ??
+    enclosures.find((e) => String(e["@type"] ?? "").startsWith("image/")) ??
+    asArray(it["media:thumbnail"] as Node | Node[])[0];
+  const url = pick ? String(pick["@url"] ?? pick["@href"] ?? "") : "";
+  if (!/^https?:\/\//.test(url)) return undefined;
+  const credit = stripHtml(textOf((pick?.["media:credit"] ?? it["media:credit"]) as unknown)) || undefined;
+  const copyright = stripHtml(textOf(it["media:copyright"] ?? it["dc:rights"])) || undefined;
+  const license = stripHtml(textOf(it["media:license"] ?? it["creativeCommons:license"])) || undefined;
+  return { url, credit, copyright, license };
+}
 
 const textOf = (v: unknown): string => {
   if (v == null) return "";
@@ -89,6 +107,7 @@ export function parseFeed(xml: string): FeedItem[] {
   };
   if (doc.rss?.channel) {
     return asArray(doc.rss.channel.item).map((it: Record<string, unknown>) => ({
+      image: feedImageOf(it),
       title: stripHtml(textOf(it.title)),
       url: textOf(it.link) || textOf(it.guid),
       snippet: stripHtml(textOf(it.description)).slice(0, 400),
@@ -100,6 +119,7 @@ export function parseFeed(xml: string): FeedItem[] {
       const links = asArray(e.link as Record<string, string> | Record<string, string>[]);
       const href = links.find((l) => !l["@rel"] || l["@rel"] === "alternate")?.["@href"] ?? links[0]?.["@href"] ?? "";
       return {
+        image: feedImageOf(e),
         title: stripHtml(textOf(e.title)),
         url: href,
         snippet: stripHtml(textOf(e.summary) || textOf(e.content)).slice(0, 400),
@@ -166,6 +186,7 @@ export async function ingest(onlySourceId?: string): Promise<IngestReport> {
           duplicateOf: dup?.id ?? (publishedDup ? `post:${publishedDup.id}` : undefined),
           similarity: dup?.score,
           status: "new",
+          feedImage: it.image,
         };
         await db().put("detected", item);
         if (item.duplicateOf) row.duplicates++;

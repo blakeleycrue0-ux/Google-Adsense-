@@ -8,6 +8,7 @@ import { requireUser } from "@/lib/auth";
 import { db, newId } from "@/lib/db";
 import { slugify } from "@/lib/format";
 import { ingest } from "@/lib/ingest";
+import { autoPropose, carrySearch } from "@/lib/images/search";
 import type { Post } from "@/lib/types";
 
 export async function runIngest(_: ActionResult, form: FormData): Promise<ActionResult> {
@@ -16,11 +17,13 @@ export async function runIngest(_: ActionResult, form: FormData): Promise<Action
   const active = (await db().list("sources")).filter((s) => (sourceId ? s.id === sourceId : s.active));
   if (!active.length) return { ok: false, message: "No hay fuentes activas. Actívalas en «Fuentes»." };
   const r = await ingest(sourceId);
+  // Propuestas de imagen para lo detectado (limitado para respetar las cuotas de los bancos).
+  const images = r.added ? await autoPropose(Math.min(r.added, 10)) : null;
   revalidatePath("/admin", "layout");
   const errors = r.sources.filter((s) => s.error);
   return {
     ok: errors.length < r.sources.length,
-    message: `${r.added} nuevas · ${r.sources.reduce((s, x) => s + x.duplicates, 0)} duplicados${errors.length ? ` · ${errors.length} fuente(s) con error` : ""}.`,
+    message: `${r.added} nuevas · ${r.sources.reduce((s, x) => s + x.duplicates, 0)} duplicados${errors.length ? ` · ${errors.length} fuente(s) con error` : ""}${images ? ` · imágenes: ${images.proposed} propuestas de ${images.searched}` : ""}.`,
   };
 }
 
@@ -82,6 +85,7 @@ Entradilla: [qué ha pasado, en una o dos frases]
   };
   await db().put("posts", post);
   await db().put("detected", { ...item, status: "drafted", draftPostId: post.id });
+  await carrySearch(item.id, post.id);
   void user;
   redirect(`/admin/articulos/${post.id}${aiNote ? `?aviso=${encodeURIComponent(aiNote)}` : ""}`);
 }
