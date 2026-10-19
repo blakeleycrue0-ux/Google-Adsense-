@@ -146,9 +146,11 @@ export interface IngestReport {
 }
 
 export async function ingest(onlySourceId?: string): Promise<IngestReport> {
+  const t0 = Date.now();
   const sources = (await db().list("sources")).filter((s) => (onlySourceId ? s.id === onlySourceId : s.active));
-  const existing = await db().list("detected");
-  const posts = await db().list("posts");
+  console.warn(`[voltio-ingest] +${Date.now() - t0}ms fuentes activas: ${sources.length}`);
+  const [existing, posts] = await Promise.all([db().list("detected"), db().list("posts")]);
+  console.warn(`[voltio-ingest] +${Date.now() - t0}ms ${existing.length} detectadas, ${posts.length} artículos`);
   const knownUrls = new Set(existing.map((d) => d.normalizedUrl));
   const recentWindow = Date.now() - 4 * 86400_000;
   const recent = existing.filter((d) => new Date(d.detectedAt).getTime() > recentWindow && !d.duplicateOf);

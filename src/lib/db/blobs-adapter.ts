@@ -17,8 +17,47 @@ import { seedCollection } from "@/data/seed";
 const DATA = "voltio-data";
 const MEDIA = "voltio-media";
 
-const data = () => getStore({ name: DATA, consistency: "strong" });
-const media = () => getStore({ name: MEDIA, consistency: "strong" });
+/**
+ * Next.js intercepta fetch y pasa los GET por su caché de datos, que en Netlify
+ * se guarda a su vez en Blobs: las lecturas se quedaban esperando. Con
+ * «no-store» las peticiones del cliente de Blobs van directas.
+ */
+const directFetch: typeof fetch = (input, init) => {
+  // El fetch original (sin el parche de Next.js) si está disponible.
+  const original = (globalThis.fetch as typeof fetch & { _nextOriginalFetch?: typeof fetch })._nextOriginalFetch;
+  return (original ?? fetch)(input, { ...init, cache: "no-store" });
+};
+
+const data = () => getStore({ name: DATA, consistency: "strong", fetch: directFetch });
+const media = () => getStore({ name: MEDIA, consistency: "strong", fetch: directFetch });
+
+/**
+ * En producción se ha visto que las lecturas con consistencia fuerte pueden no
+ * responder. Si una tarda más de READ_TIMEOUT_MS, el proceso pasa a lecturas
+ * eventuales (pueden ir hasta un minuto por detrás de la última escritura).
+ */
+const READ_TIMEOUT_MS = 3_000;
+let strongReads = true;
+
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | typeof TIMEOUT> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return Promise.race([p, new Promise<typeof TIMEOUT>((r) => (timer = setTimeout(() => r(TIMEOUT), ms)))]).finally(() => clearTimeout(timer));
+}
+const TIMEOUT = Symbol("timeout");
+
+async function read<T>(name: string, op: (store: ReturnType<typeof getStore>) => Promise<T>): Promise<T> {
+  if (strongReads) {
+    const r = await withTimeout(op(getStore({ name, consistency: "strong", fetch: directFetch })), READ_TIMEOUT_MS);
+    if (r !== TIMEOUT) return r;
+    strongReads = false;
+    console.warn("[voltio-blobs] lectura fuerte sin respuesta en 3 s: se usan lecturas eventuales");
+  }
+  const r = await withTimeout(op(getStore({ name, fetch: directFetch })), READ_TIMEOUT_MS * 2);
+  if (r === TIMEOUT) throw new Error("Netlify Blobs no responde");
+  return r;
+}
+
+const readJson = (key: string) => read(DATA, (s) => s.get(key, { type: "json" }) as Promise<unknown>);
 
 const docKey = (c: string, id: string) => `d/${c}/${encodeURIComponent(id)}`;
 
@@ -30,7 +69,7 @@ export class BlobsAdapter implements DataAdapter {
 
   private async seeded(collection: CollectionName) {
     if (this.seededCache.has(collection)) return true;
-    const ok = (await data().get(`seeded/${collection}`)) !== null;
+    const ok = (await read(DATA, (s) => s.get(`seeded/${collection}`))) !== null;
     if (ok) this.seededCache.add(collection);
     return ok;
   }
@@ -59,15 +98,14 @@ export class BlobsAdapter implements DataAdapter {
 
   async list<K extends CollectionName>(collection: K): Promise<Collections[K][]> {
     if (!(await this.seeded(collection))) return seedCollection(collection);
-    const store = data();
-    const { blobs } = await store.list({ prefix: `d/${collection}/` });
-    const docs: unknown[] = await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })));
+    const { blobs } = await data().list({ prefix: `d/${collection}/` });
+    const docs: unknown[] = await Promise.all(blobs.map((b) => readJson(b.key)));
     return docs.filter((d) => d !== null) as Collections[K][];
   }
 
   async get<K extends CollectionName>(collection: K, id: string) {
     if (!(await this.seeded(collection))) return seedCollection(collection).find((d) => d.id === id) ?? null;
-    return ((await data().get(docKey(collection, id), { type: "json" })) as Collections[K] | null) ?? null;
+    return ((await readJson(docKey(collection, id))) as Collections[K] | null) ?? null;
   }
 
   async put<K extends CollectionName>(collection: K, doc: Collections[K]) {
@@ -81,7 +119,7 @@ export class BlobsAdapter implements DataAdapter {
   }
 
   async getSettings() {
-    return ((await data().get("settings", { type: "json" })) as Partial<Settings> | null) ?? null;
+    return ((await readJson("settings")) as Partial<Settings> | null) ?? null;
   }
 
   async saveSettings(settings: Settings) {
@@ -115,7 +153,7 @@ export class BlobsAdapter implements DataAdapter {
   }
 
   async readUpload(path: string) {
-    const entry = await media().getWithMetadata(path, { type: "arrayBuffer" });
+    const entry = await read(MEDIA, (s) => s.getWithMetadata(path, { type: "arrayBuffer" }));
     if (!entry) return null;
     return { data: new Uint8Array(entry.data as ArrayBuffer), mime: String(entry.metadata?.mime ?? "application/octet-stream") };
   }

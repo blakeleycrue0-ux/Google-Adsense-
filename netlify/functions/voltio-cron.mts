@@ -2,7 +2,7 @@ import type { Config } from "@netlify/functions";
 
 /**
  * Tarea programada: cada hora (minuto 7, UTC) lanza la detección de noticias y
- * las propuestas automáticas de imágenes. Nada se aprueba ni se publica solo.
+ * las imágenes automáticas (solo se publican las que superan todos los controles).
  * Las programadas solo se ejecutan en el despliegue de producción.
  */
 const run = async (req: Request) => {
