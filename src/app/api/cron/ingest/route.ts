@@ -18,17 +18,19 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
   const started = Date.now();
-  const work = (async () => {
-    const report = await ingest();
-    const rssMs = Date.now() - started;
-    console.warn(`[voltio-ingest] rss: ${report.added} nuevas en ${rssMs}ms`);
-    // Propone imágenes para lo detectado y para contenidos pendientes. Nunca aprueba ni publica.
-    const images = await autoPropose(10, { budgetMs: 24_000 - rssMs });
+  // RSS e imágenes en paralelo: las imágenes de lo ya detectado no esperan a los feeds.
+  // Las noticias nuevas de esta ejecución reciben imagen en la siguiente.
+  const rss = ingest().then((report) => {
+    console.warn(`[voltio-ingest] rss: ${report.added} nuevas en ${Date.now() - started}ms`);
+    return report;
+  });
+  const imagesWork = autoPropose(10, { budgetMs: 18_000 }).then((images) => {
     console.warn(
-      `[voltio-ingest] imágenes: ${images.proposed} propuestas de ${images.searched} (quedan ${images.pending}) · total ${Date.now() - started}ms`,
+      `[voltio-ingest] imágenes: ${images.published} publicadas, ${images.proposed} con propuesta, ${images.searched} buscadas (quedan ${images.pending}) en ${Date.now() - started}ms`,
     );
-    return { ...report, images };
-  })();
+    return images;
+  });
+  const work = Promise.all([rss, imagesWork]).then(([report, images]) => ({ ...report, images }));
 
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<null>((resolve) => (timer = setTimeout(() => resolve(null), RESPONSE_DEADLINE_MS)));

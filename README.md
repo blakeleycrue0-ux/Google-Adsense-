@@ -110,7 +110,7 @@ Las fotografías se gestionan en **Panel → Imágenes**. El sistema propone, co
 - La importación por URL valida el destino (sin redes privadas, sin redirecciones a ellas), el tipo y el tamaño.
 - Un artículo nuevo no se puede publicar sin una imagen aprobada.
 
-**Automatización:** tras cada detección RSS (botón o cron) se buscan propuestas para lo detectado y para contenidos pendientes. El borrador creado desde una noticia hereda su propuesta; basta con revisarla y pulsar «Aprobar propuesta». Si no hay ninguna imagen autorizada, el contenido queda pendiente de selección manual.
+**Automatización:** cada ejecución del cron (y el botón del panel) busca imágenes para lo detectado y para los contenidos sin imagen aprobada. La mejor candidata se publica sola si supera todos los controles: licencia comercial verificada, modelo exacto en móviles o tema claro en artículos (puntuación ≥ 70) y resolución suficiente. Figura como aprobada por «Automático (Voltio)» y se puede cambiar o quitar desde el panel. Las demás quedan como propuesta; el borrador creado desde una noticia hereda la suya. Si no hay ninguna imagen autorizada, el contenido queda pendiente de selección manual.
 
 > Los proveedores requieren salida a internet hacia sus dominios. Si un proveedor no responde, el panel muestra el error real («Comprobar conexión»); nunca se simulan resultados.
 

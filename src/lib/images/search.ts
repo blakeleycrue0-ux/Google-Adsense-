@@ -1,5 +1,7 @@
 import "server-only";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
+import { applyImage, importCandidate } from "./import";
 import type { DetectedItem, ImageCandidate, ImageProviderId, ImageSearch, ImageTargetType, Phone, Post } from "@/lib/types";
 import { LICENSES } from "./licenses";
 import { matchPhone, matchTopic, postKeywords, qualityScore } from "./matching";
@@ -147,17 +149,52 @@ export async function getSearch(type: ImageTargetType, id: string) {
   return db().get("imageSearches", searchId(type, id));
 }
 
+/** Puntuación mínima para publicar sin revisión (más exigente que la de propuesta en portadas). */
+const AUTO_PUBLISH_MIN: Record<"cover" | "phone", number> = { cover: 70, phone: 60 };
+
+/** Quién figura como aprobador de las imágenes publicadas automáticamente. */
+export const AUTO_APPROVER = "Automático (Voltio)";
+
 /**
- * Propuestas automáticas: busca imágenes para noticias detectadas, artículos y
- * fichas que aún no tienen imagen aprobada. Nunca aprueba ni publica nada.
- * Solo empieza una búsqueda si puede terminar dentro de `budgetMs` (las
+ * Publica sola la mejor candidata de una búsqueda si cumple todos los
+ * controles: licencia comercial verificada, coincidencia con el contenido
+ * (modelo exacto en móviles) y resolución suficiente. Las noticias detectadas
+ * no se publican: su imagen pasa al borrador cuando se crea.
+ */
+async function autoPublish(s: ImageSearch): Promise<boolean> {
+  if (s.targetType === "detected") return false;
+  const target = await loadTarget(s.targetType, s.targetId);
+  if (!target || target.type === "detected") return false;
+  const current = target.type === "post" ? target.post.cover : target.phone.image;
+  if (imageState(current) === "approved") return false;
+  const kind = s.targetType === "phone" ? "phone" : "cover";
+  const alt = target.type === "phone" ? `${target.phone.brand} ${target.phone.model}` : target.post.title;
+  const eligible = s.candidates.filter((c) => c.usable && c.matched && c.score >= AUTO_PUBLISH_MIN[kind]).slice(0, 2);
+  for (const c of eligible) {
+    try {
+      const ref = await importCandidate(c, kind, alt.slice(0, 160), AUTO_APPROVER);
+      await applyImage(s.targetType, s.targetId, ref);
+      return true;
+    } catch (e) {
+      // Descarga demasiado grande o formato no válido: se prueba la siguiente.
+      console.warn(`[voltio-propuestas] ${s.id}: no se pudo importar ${c.key}: ${(e as Error).message}`);
+    }
+  }
+  return false;
+}
+
+/**
+ * Búsqueda y publicación automáticas: busca imágenes para noticias detectadas,
+ * artículos y fichas sin imagen aprobada y publica la mejor si supera todos los
+ * controles (ver autoPublish). Lo demás queda como propuesta en el panel.
+ * Solo empieza un contenido si puede terminar dentro de `budgetMs` (las
  * funciones de Netlify se cortan a los 30 s); lo pendiente se retoma en la
  * siguiente ejecución.
  */
 export async function autoPropose(limit = 8, { budgetMs = 24_000 }: { budgetMs?: number } = {}) {
-  // Peor caso de una búsqueda: el tiempo de espera de los proveedores más el guardado.
+  // Peor caso de un contenido: el tiempo de espera de los proveedores más la importación.
   const started = Date.now();
-  const deadline = started + budgetMs - (PROVIDER_TIMEOUT_MS + 1_000);
+  const deadline = started + budgetMs - (PROVIDER_TIMEOUT_MS + 4_000);
   // Líneas cortas en los registros del servidor para saber dónde se va el tiempo.
   const trace = (msg: string) => console.warn(`[voltio-propuestas] +${Date.now() - started}ms ${msg}`);
   const [posts, phones, detected, searches] = await Promise.all([
@@ -171,26 +208,33 @@ export async function autoPropose(limit = 8, { budgetMs = 24_000 }: { budgetMs?:
     const s = searched.get(key);
     return s && Date.now() - new Date(s.createdAt).getTime() < 24 * 3600_000;
   };
-  const queue: [ImageTargetType, string][] = [
-    ...detected.filter((d) => d.status === "new" && !d.duplicateOf && !recent(searchId("detected", d.id))).map((d) => ["detected", d.id] as [ImageTargetType, string]),
-    ...posts.filter((p) => imageState(p.cover) !== "approved" && !recent(searchId("post", p.id))).map((p) => ["post", p.id] as [ImageTargetType, string]),
-    ...phones.filter((p) => imageState(p.image) !== "approved" && !recent(searchId("phone", p.id))).map((p) => ["phone", p.id] as [ImageTargetType, string]),
-  ].slice(0, limit);
-  trace(`datos leídos (${posts.length} artículos, ${phones.length} móviles, ${detected.length} detectadas, ${searches.length} búsquedas) · cola ${queue.length}`);
+  // Sin imagen aprobada: los ya buscados hace poco reutilizan su búsqueda (solo se intenta publicar).
+  const unapproved: [ImageTargetType, string][] = [
+    ...detected.filter((d) => d.status === "new" && !d.duplicateOf).map((d) => ["detected", d.id] as [ImageTargetType, string]),
+    ...posts.filter((p) => imageState(p.cover) !== "approved").map((p) => ["post", p.id] as [ImageTargetType, string]),
+    ...phones.filter((p) => imageState(p.image) !== "approved").map((p) => ["phone", p.id] as [ImageTargetType, string]),
+  ];
+  const reuse = unapproved.filter(([t, id]) => t !== "detected" && recent(searchId(t, id)));
+  const queue = unapproved.filter(([t, id]) => !recent(searchId(t, id))).slice(0, limit);
+  trace(`datos leídos (${posts.length} artículos, ${phones.length} móviles, ${detected.length} detectadas, ${searches.length} búsquedas) · reutilizables ${reuse.length} · cola ${queue.length}`);
 
-  const summary = { searched: 0, proposed: 0, pending: 0, errors: [] as string[] };
-  for (const [i, [type, id]] of queue.entries()) {
+  const summary = { searched: 0, proposed: 0, published: 0, pending: 0, errors: [] as string[] };
+  const work: [ImageTargetType, string, boolean][] = [...reuse.map(([t, id]) => [t, id, true] as [ImageTargetType, string, boolean]), ...queue.map(([t, id]) => [t, id, false] as [ImageTargetType, string, boolean])];
+  for (const [i, [type, id, reused]] of work.entries()) {
     if (Date.now() > deadline) {
-      summary.pending = queue.length - i;
+      summary.pending = work.length - i;
       break;
     }
-    const s = await searchImages(type, id, { origin: "auto" });
-    trace(`${type}:${id} ${s ? `${s.candidates.length} candidatas` : "no encontrado"}`);
+    const s = reused ? searched.get(searchId(type, id))! : await searchImages(type, id, { origin: "auto" });
     if (!s) continue;
-    summary.searched++;
+    if (!reused) summary.searched++;
     if (bestCandidate(s)) summary.proposed++;
+    const published = await autoPublish(s);
+    if (published) summary.published++;
+    trace(`${type}:${id} ${reused ? "búsqueda previa" : `${s.candidates.length} candidatas`} · ${published ? "publicada" : "sin publicar"}`);
     for (const e of s.errors) if (!summary.errors.includes(`${e.provider}: ${e.message}`)) summary.errors.push(`${e.provider}: ${e.message}`);
   }
+  if (summary.published) revalidatePath("/", "layout");
   return summary;
 }
 

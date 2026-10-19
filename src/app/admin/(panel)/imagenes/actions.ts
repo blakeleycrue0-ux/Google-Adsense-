@@ -174,7 +174,7 @@ export async function runAutoPropose(): Promise<ActionResult> {
   revalidatePath("/admin/imagenes");
   const errs = r.errors.length ? ` Errores: ${r.errors.slice(0, 3).join(" · ")}` : "";
   const left = r.pending ? ` Quedan ${r.pending}: vuelve a pulsar para continuar.` : "";
-  return { ok: r.errors.length === 0 || r.proposed > 0, message: `${r.searched} contenidos revisados, ${r.proposed} con propuesta.${left}${errs}` };
+  return { ok: r.errors.length === 0 || r.proposed > 0, message: `${r.searched} contenidos revisados, ${r.published} publicadas automáticamente, ${r.proposed} con propuesta.${left}${errs}` };
 }
 
 /** Comprueba la conexión real con cada proveedor configurado. */
