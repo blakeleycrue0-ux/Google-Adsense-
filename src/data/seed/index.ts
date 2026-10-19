@@ -1,15 +1,19 @@
-import type { CollectionName, Collections } from "@/lib/types";
+import type { CollectionName, Collections, ImageRef } from "@/lib/types";
+import autoPhotos from "../auto-photos.json";
 import { authors, categories, sources, stores } from "./taxonomy";
 import { posts } from "./posts";
 import { links, phones } from "./phones";
 import { dealLinks, deals, guides } from "./commerce";
 import { legalPages } from "./legal";
 
+// Fotos reales elegidas durante la compilación (scripts/fotos.ts); sustituyen a las ilustraciones.
+const photos = autoPhotos as Record<string, ImageRef>;
+
 const seeds: { [K in CollectionName]: Collections[K][] } = {
   categories,
   authors,
-  posts,
-  phones,
+  posts: posts.map((p) => (p.cover.illustrative && photos[`post:${p.id}`] ? { ...p, cover: photos[`post:${p.id}`] } : p)),
+  phones: phones.map((p) => (p.image.illustrative && photos[`phone:${p.id}`] ? { ...p, image: photos[`phone:${p.id}`] } : p)),
   stores,
   links: [...links, ...dealLinks],
   deals,

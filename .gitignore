@@ -43,3 +43,6 @@ next-env.d.ts
 
 # datos locales (contenido, usuarios, contadores y subidas del adaptador de ficheros)
 /data/
+
+# fotos generadas en la compilación (scripts/fotos.ts)
+/public/fotos/

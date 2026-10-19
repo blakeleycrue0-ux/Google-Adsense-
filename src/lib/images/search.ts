@@ -3,8 +3,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { applyImage, importCandidate } from "./import";
 import type { DetectedItem, ImageCandidate, ImageProviderId, ImageSearch, ImageTargetType, Phone, Post } from "@/lib/types";
-import { LICENSES } from "./licenses";
-import { matchPhone, matchTopic, postKeywords, qualityScore } from "./matching";
+import { AUTO_APPROVER, keywordsFor, publishable, queryFor, scoreCandidate, type ScoreTarget } from "./scoring";
 import { PROVIDER_TIMEOUT_MS, ProviderError, providerInfo, searchProvider } from "./providers";
 
 export { bestCandidate, imageState, searchId, type ImageState } from "./state";
@@ -30,19 +29,15 @@ export async function loadTarget(type: ImageTargetType, id: string): Promise<Tar
   return detected ? { type, detected } : null;
 }
 
-/** Consulta propuesta por defecto para cada tipo de contenido. */
-export function defaultQuery(t: Target): string {
-  if (t.type === "phone") return `${t.phone.brand} ${t.phone.model}`;
-  const source = t.type === "post" ? t.post : { title: t.detected.title, tags: t.detected.matchedKeywords };
-  const { en, es } = postKeywords(source);
-  return (en.length >= 2 ? en : [...en, ...es]).slice(0, 4).join(" ");
+/** Destino de puntuación equivalente (las noticias detectadas se tratan como artículos). */
+function scoreTarget(t: Target): ScoreTarget {
+  if (t.type === "phone") return { type: "phone", phone: t.phone };
+  return { type: "post", post: t.type === "post" ? t.post : { title: t.detected.title, tags: t.detected.matchedKeywords } };
 }
 
-function keywordsFor(t: Target, query: string) {
-  if (t.type === "phone") return [];
-  const source = t.type === "post" ? t.post : { title: t.detected.title, tags: t.detected.matchedKeywords };
-  const { en, es } = postKeywords(source);
-  return [...new Set([...en, ...es, ...query.toLowerCase().split(/\s+/).filter((w) => w.length > 2)])];
+/** Consulta propuesta por defecto para cada tipo de contenido. */
+export function defaultQuery(t: Target): string {
+  return queryFor(scoreTarget(t));
 }
 
 /** Candidata con la imagen que la propia fuente incluye en su feed. */
@@ -76,27 +71,7 @@ async function feedCandidate(detected: DetectedItem | null | undefined): Promise
 }
 
 function score(c: ImageCandidate, t: Target, keywords: string[]): ImageCandidate {
-  if (c.provider === "feed") return c;
-  const text = `${c.title} ${c.description ?? ""}`;
-  const kind = t.type === "phone" ? "phone" : "cover";
-  const match = t.type === "phone" ? matchPhone(t.phone, text) : matchTopic(keywords, text);
-  const quality = qualityScore(c.width, c.height, kind);
-  const reasons = [...match.reasons, ...quality.reasons];
-  let usable = c.usable;
-  let blockedReason = c.blockedReason;
-  if (!quality.ok && usable) {
-    usable = false;
-    blockedReason = quality.reasons[0];
-  }
-  const attributionPenalty = LICENSES[c.license].attribution ? 0 : 3;
-  return {
-    ...c,
-    usable,
-    blockedReason,
-    matched: match.ok,
-    score: match.ok ? match.score + quality.score + attributionPenalty : 0,
-    reasons,
-  };
+  return c.provider === "feed" ? c : scoreCandidate(c, scoreTarget(t), keywords);
 }
 
 /**
@@ -113,7 +88,7 @@ export async function searchImages(
   const query = (opts.query?.trim() || defaultQuery(target)).slice(0, 120);
   const configured = providerInfo().filter((p) => p.configured).map((p) => p.id);
   const providers = (opts.providers?.length ? opts.providers : configured).filter((p) => configured.includes(p));
-  const keywords = keywordsFor(target, query);
+  const keywords = keywordsFor(scoreTarget(target), query);
   const kind = type === "phone" ? "phone" : "cover";
 
   const settled = await Promise.allSettled(providers.map((p) => searchProvider(p, query, { kind, perPage: 20 })));
@@ -149,11 +124,7 @@ export async function getSearch(type: ImageTargetType, id: string) {
   return db().get("imageSearches", searchId(type, id));
 }
 
-/** Puntuación mínima para publicar sin revisión (más exigente que la de propuesta en portadas). */
-const AUTO_PUBLISH_MIN: Record<"cover" | "phone", number> = { cover: 70, phone: 60 };
-
-/** Quién figura como aprobador de las imágenes publicadas automáticamente. */
-export const AUTO_APPROVER = "Automático (Voltio)";
+export { AUTO_APPROVER };
 
 /**
  * Publica sola la mejor candidata de una búsqueda si cumple todos los
@@ -169,7 +140,7 @@ async function autoPublish(s: ImageSearch): Promise<boolean> {
   if (imageState(current) === "approved") return false;
   const kind = s.targetType === "phone" ? "phone" : "cover";
   const alt = target.type === "phone" ? `${target.phone.brand} ${target.phone.model}` : target.post.title;
-  const eligible = s.candidates.filter((c) => c.usable && c.matched && c.score >= AUTO_PUBLISH_MIN[kind]).slice(0, 2);
+  const eligible = publishable(s.candidates, kind).slice(0, 2);
   for (const c of eligible) {
     try {
       const ref = await importCandidate(c, kind, alt.slice(0, 160), AUTO_APPROVER);

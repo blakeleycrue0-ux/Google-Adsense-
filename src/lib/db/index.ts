@@ -14,7 +14,9 @@ export function db(): DataAdapter {
   // Durante `next build` Blobs no está disponible: se prerenderiza con los datos del repositorio
   // y las páginas se regeneran (ISR) con los datos de Blobs en cuanto se despliegan.
   const building = process.env.NEXT_PHASE === "phase-production-build";
-  const onNetlify = !building && (process.env.STORAGE_DRIVER === "netlify-blobs" || Boolean(process.env.NETLIFY_BLOBS_CONTEXT));
+  // STORAGE_DRIVER=file: solo los datos del repositorio (y las fotos de la compilación), sin escrituras.
+  const fileOnly = process.env.STORAGE_DRIVER === "file";
+  const onNetlify = !building && !fileOnly && (process.env.STORAGE_DRIVER === "netlify-blobs" || Boolean(process.env.NETLIFY_BLOBS_CONTEXT));
   adapter = url && key ? new SupabaseAdapter(url, key) : onNetlify ? new BlobsAdapter() : new FileAdapter();
   return adapter;
 }
