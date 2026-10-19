@@ -25,7 +25,7 @@ import type { ImageRef } from "@/lib/types";
 
 const ROOT = process.cwd();
 // .next/cache se conserva entre compilaciones en Netlify: no se repiten búsquedas ni descargas.
-const CACHE = path.join(ROOT, ".next/cache/voltio-fotos-v2");
+const CACHE = path.join(ROOT, ".next/cache/voltio-fotos-v3");
 const PUBLIC = path.join(ROOT, "public/fotos");
 const OUT = path.join(ROOT, "src/data/auto-photos.json");
 // Lo lee el plugin netlify/plugins/voltio-fotos para mostrarlo en el resumen del despliegue.
@@ -78,29 +78,38 @@ async function main() {
   let limited = false;
   for (const { key, alt, t } of targets) {
     const prev = index[key];
-    // Ya resuelta, o sin resultado hace menos de 3 días: no se repite.
+    // Ya resuelta, o sin resultado hace menos de un día: no se repite.
     if (prev && "ref" in prev) continue;
-    if (prev && "none" in prev && Date.now() - Date.parse(prev.checkedAt) < 3 * 86400_000) continue;
+    if (prev && "none" in prev && Date.now() - Date.parse(prev.checkedAt) < 86400_000) continue;
     if (limited) break;
 
     const kind = t.type === "phone" ? "phone" : "cover";
-    const query = queryFor(t);
-    const keywords = keywordsFor(t, query);
-    const candidates = [];
+    const fullQuery = queryFor(t);
+    const keywords = keywordsFor(t, fullQuery);
+    // Portadas: de la consulta completa a otras más cortas hasta encontrar una foto válida.
+    const words = fullQuery.split(/\s+/);
+    const queries = kind === "cover" ? [...new Set([fullQuery, words.slice(0, 2).join(" "), words[0]])].filter(Boolean) : [fullQuery];
+    let candidates: ReturnType<typeof scoreCandidate>[] = [];
     let failed = false;
-    for (const p of providers) {
-      try {
-        candidates.push(...(await searchProvider(p, query, { kind, perPage: 20 })));
-      } catch (e) {
-        const msg = (e as Error).message;
-        log(`${key} · ${p}: ${msg}`);
-        failed = true;
-        if (msg.includes("429")) limited = true;
+    let query = fullQuery;
+    for (const q of queries) {
+      query = q;
+      for (const p of providers) {
+        try {
+          candidates.push(...(await searchProvider(p, q, { kind, perPage: 20 })).map((c) => scoreCandidate(c, t, keywords)));
+        } catch (e) {
+          const msg = (e as Error).message;
+          log(`${key} · ${p}: ${msg}`);
+          failed = true;
+          if (msg.includes("429")) limited = true;
+        }
+        await sleep(1_500); // Respeta el límite de peticiones anónimas de Openverse.
       }
-      await sleep(1_500); // Respeta el límite de peticiones anónimas de Openverse.
+      if (limited || publishable(candidates, kind).length) break;
     }
+    candidates = [...new Map(candidates.map((c) => [c.key, c])).values()];
 
-    const best = publishable(candidates.map((c) => scoreCandidate(c, t, keywords)), kind).slice(0, 3);
+    const best = publishable(candidates, kind).slice(0, 3);
     let done = false;
     for (const c of best) {
       try {
@@ -124,7 +133,8 @@ async function main() {
     // Solo se anota «sin foto» si la búsqueda funcionó; un fallo de red se reintenta en la próxima compilación.
     if (!done && !failed) {
       index[key] = { none: true, checkedAt: new Date().toISOString() };
-      const near = candidates.length ? ` · ${candidates.length} resultados, mejor: «${candidates.map((c) => scoreCandidate(c, t, keywords)).sort((a, b) => b.score - a.score)[0].title}»` : " · sin resultados";
+      const top = [...candidates].sort((a, b) => b.score - a.score)[0];
+      const near = top ? ` · ${candidates.length} resultados; mejor «${top.title.slice(0, 60)}» ${top.score} pts: ${top.blockedReason ?? top.reasons[0] ?? ""}` : " · sin resultados";
       log(`${key}: ninguna supera los controles («${query}»)${near}`);
     }
   }

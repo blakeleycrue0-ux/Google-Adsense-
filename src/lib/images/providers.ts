@@ -166,8 +166,8 @@ async function searchOpenverse(query: string, perPage: number, kind: "cover" | "
     mature: "false",
   });
   if (kind === "cover") {
+    // La resolución mínima se comprueba después (qualityScore); filtrar aquí por tamaño deja casi sin resultados.
     params.set("aspect_ratio", "wide");
-    params.set("size", "large");
   }
   const token = await openverseToken();
   return parseOpenverse(
