@@ -22,7 +22,11 @@ const MEDIA = "voltio-media";
  * se guarda a su vez en Blobs: las lecturas se quedaban esperando. Con
  * «no-store» las peticiones del cliente de Blobs van directas.
  */
-const directFetch: typeof fetch = (input, init) => fetch(input, { ...init, cache: "no-store" });
+const directFetch: typeof fetch = (input, init) => {
+  // El fetch original (sin el parche de Next.js) si está disponible.
+  const original = (globalThis.fetch as typeof fetch & { _nextOriginalFetch?: typeof fetch })._nextOriginalFetch;
+  return (original ?? fetch)(input, { ...init, cache: "no-store" });
+};
 
 const data = () => getStore({ name: DATA, consistency: "strong", fetch: directFetch });
 const media = () => getStore({ name: MEDIA, consistency: "strong", fetch: directFetch });
