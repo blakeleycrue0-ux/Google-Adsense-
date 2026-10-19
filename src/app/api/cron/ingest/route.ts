@@ -14,8 +14,10 @@ export async function GET(req: Request) {
   if (!cronAuthorized(req, "ingest")) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
+  const started = Date.now();
   const report = await ingest();
   // Propone imágenes para lo detectado y para contenidos pendientes. Nunca aprueba ni publica.
-  const images = await autoPropose(10);
+  // Se ajusta al tiempo que queda antes del límite de 30 s de Netlify.
+  const images = await autoPropose(10, { budgetMs: Math.max(0, 15_000 - (Date.now() - started)) });
   return NextResponse.json({ ...report, images });
 }

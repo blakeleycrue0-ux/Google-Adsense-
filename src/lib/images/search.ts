@@ -150,8 +150,11 @@ export async function getSearch(type: ImageTargetType, id: string) {
 /**
  * Propuestas automáticas: busca imágenes para noticias detectadas, artículos y
  * fichas que aún no tienen imagen aprobada. Nunca aprueba ni publica nada.
+ * No empieza búsquedas nuevas pasado `budgetMs` (las funciones de Netlify se
+ * cortan a los 30 s); lo pendiente se retoma en la siguiente ejecución.
  */
-export async function autoPropose(limit = 8) {
+export async function autoPropose(limit = 8, { budgetMs = 18_000 }: { budgetMs?: number } = {}) {
+  const deadline = Date.now() + budgetMs;
   const [posts, phones, detected, searches] = await Promise.all([
     db().list("posts"),
     db().list("phones"),
@@ -169,8 +172,12 @@ export async function autoPropose(limit = 8) {
     ...phones.filter((p) => imageState(p.image) !== "approved" && !recent(searchId("phone", p.id))).map((p) => ["phone", p.id] as [ImageTargetType, string]),
   ].slice(0, limit);
 
-  const summary = { searched: 0, proposed: 0, errors: [] as string[] };
-  for (const [type, id] of queue) {
+  const summary = { searched: 0, proposed: 0, pending: 0, errors: [] as string[] };
+  for (const [i, [type, id]] of queue.entries()) {
+    if (Date.now() > deadline) {
+      summary.pending = queue.length - i;
+      break;
+    }
     const s = await searchImages(type, id, { origin: "auto" });
     if (!s) continue;
     summary.searched++;

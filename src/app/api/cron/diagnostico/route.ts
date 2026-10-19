@@ -39,6 +39,7 @@ export async function GET(req: Request) {
       }),
   );
   const report = { at: new Date().toISOString(), storage, providers };
-  console.log(`[voltio-diagnostico] ${JSON.stringify(report)}`);
+  // console.warn: en Netlify las líneas de console.log de las rutas no siempre llegan a los registros.
+  console.warn(`[voltio-diagnostico] ${JSON.stringify(report)}`);
   return NextResponse.json(report);
 }
