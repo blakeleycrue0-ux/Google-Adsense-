@@ -1,3 +1,4 @@
+import { getStore } from "@netlify/blobs";
 import { NextResponse } from "next/server";
 import { cronAuthorized } from "@/lib/cron-auth";
 import { db } from "@/lib/db";
@@ -38,10 +39,29 @@ export async function GET(req: Request) {
         }
       }),
   );
-  const report = { at: new Date().toISOString(), storage, providers };
+  // Lecturas individuales de Blobs (con límite de 5 s): consistencia fuerte frente a eventual.
+  let reads = "";
+  if (storage.kind === "netlify-blobs") {
+    const probe = async (label: string, fn: () => Promise<unknown>) => {
+      const t = Date.now();
+      const out = await Promise.race([
+        fn().then(() => `${Date.now() - t}ms`, (e: Error) => `error ${e.message.slice(0, 80)}`),
+        new Promise<string>((r) => setTimeout(() => r("más de 5 s"), 5_000)),
+      ]);
+      return `${label}=${out}`;
+    };
+    reads = (
+      await Promise.all([
+        probe("get-fuerte", () => getStore({ name: "voltio-data", consistency: "strong" }).get("seeded/sources")),
+        probe("get-eventual", () => getStore({ name: "voltio-data" }).get("seeded/sources")),
+        probe("list-fuentes", () => db().list("sources")),
+      ])
+    ).join(" ");
+  }
+  const report = { at: new Date().toISOString(), storage, providers, reads };
   // Una línea corta: en Netlify las líneas largas de las rutas no siempre llegan a los registros.
   const summary = providers.map((p) => (p.ok ? `${p.provider}=ok ${p.results} resultados (${p.usable} utilizables) ${p.ms}ms` : `${p.provider}=error ${p.error}`));
-  console.warn(`[voltio-diagnostico] almacenamiento=${storage.kind}:${storage.ok ? "ok" : `error ${storage.error ?? ""}`} · ${summary.join(" · ")}`);
+  console.warn(`[voltio-diagnostico] almacenamiento=${storage.kind}:${storage.ok ? "ok" : `error ${storage.error ?? ""}`} · ${summary.join(" · ")}${reads ? ` · lecturas: ${reads}` : ""}`);
   // 503 si algo falla, para que el estado sea visible en los registros de peticiones.
   const healthy = storage.ok && providers.every((p) => p.ok && (p.results ?? 0) > 0);
   return NextResponse.json(report, { status: healthy ? 200 : 503 });
