@@ -9,11 +9,12 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "images:demo": "node scripts/generate-demo-images.mjs",
-    "data:reset": "node -e \"require('fs').rmSync(process.env.DATA_DIR||'data',{recursive:true,force:true});console.log('Datos locales eliminados: se usar\u00e1 el contenido de demostraci\u00f3n.')\"",
+    "data:reset": "node -e \"require('fs').rmSync(process.env.DATA_DIR||'data',{recursive:true,force:true});console.log('Datos locales eliminados: se usará el contenido de demostración.')\"",
     "test": "vitest run"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
+    "@netlify/blobs": "^11.1.4",
     "@supabase/supabase-js": "^2.118.0",
     "fast-xml-parser": "^5.11.2",
     "geist": "^1.8.1",
@@ -27,6 +28,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@netlify/functions": "^6.0.2",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^22.20.5",
     "@types/react": "^19",

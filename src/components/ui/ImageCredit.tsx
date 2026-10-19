@@ -1,10 +1,8 @@
 import type { ImageRef } from "@/lib/types";
 
 const VIA: Record<string, string> = {
-  wikimedia: "Wikimedia Commons",
   openverse: "Openverse",
   pexels: "Pexels",
-  unsplash: "Unsplash",
   press: "Imagen de prensa",
   feed: "Imagen de la fuente",
   retailer: "Imagen de la tienda",
@@ -47,7 +45,7 @@ export function ImageCredit({ image, className = "" }: { image: ImageRef; classN
           )}
         </>
       )}
-      {(m.license.startsWith("cc") || m.license === "pdm" || m.provider === "pexels" || m.provider === "unsplash") && (
+      {(m.license.startsWith("cc") || m.license === "pdm" || m.provider === "pexels") && (
         <>
           {" · "}
           {m.licenseUrl ? (

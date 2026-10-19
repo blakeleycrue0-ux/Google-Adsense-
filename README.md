@@ -94,12 +94,10 @@ Las fotografías se gestionan en **Panel → Imágenes**. El sistema propone, co
 
 | Fuente | Clave | Uso |
 |---|---|---|
-| Wikimedia Commons | — | Fotos de productos y temas con licencias libres. Atribución obligatoria en CC BY/BY-SA. |
-| Openverse | `OPENVERSE_TOKEN` (opcional) | Agregador de imágenes CC; se piden solo licencias con uso comercial y modificación. |
-| Pexels | `PEXELS_API_KEY` | Fotografía genérica para noticias. |
-| Unsplash | `UNSPLASH_ACCESS_KEY` | Fotografía genérica; se sirve desde su CDN y se notifica cada uso, como exigen sus condiciones. |
+| Openverse | — (opcional `OPENVERSE_CLIENT_ID` / `OPENVERSE_CLIENT_SECRET` para más cuota) | Fuente principal: fotografías de Wikimedia Commons, Flickr y otros repositorios. Solo se piden licencias que permiten uso comercial y modificación. |
+| Pexels | `PEXELS_API_KEY` (opcional) | Fotografía genérica para noticias. |
 | Feeds RSS | — | Solo si marcas la fuente como autorizada (Fuentes → «La fuente autoriza reutilizar…») e indicas dónde consta el permiso. |
-| Prensa / afiliación | — | «Imagen por URL» o subida, indicando el permiso. Opción de servirla desde su origen si el programa lo exige. |
+| Prensa / afiliación | — | «Imagen por URL» o subida, indicando el permiso. |
 | Subida propia | — | Con licencia y autoría declaradas. |
 
 **Reglas que aplica el sistema**
@@ -115,6 +113,15 @@ Las fotografías se gestionan en **Panel → Imágenes**. El sistema propone, co
 **Automatización:** tras cada detección RSS (botón o cron) se buscan propuestas para lo detectado y para contenidos pendientes. El borrador creado desde una noticia hereda su propuesta; basta con revisarla y pulsar «Aprobar propuesta». Si no hay ninguna imagen autorizada, el contenido queda pendiente de selección manual.
 
 > Los proveedores requieren salida a internet hacia sus dominios. Si un proveedor no responde, el panel muestra el error real («Comprobar conexión»); nunca se simulan resultados.
+
+## Despliegue en Netlify
+
+El sitio `voltio0` se despliega desde la rama de producción configurada en Netlify. En Netlify:
+
+- **Almacenamiento:** se usa Netlify Blobs automáticamente (contenido, ajustes, contadores e imágenes subidas). No hace falta ningún servicio externo. Las tiendas de Blobs son comunes a producción y a las previsualizaciones.
+- **Búsquedas de imágenes:** se ejecutan en el backend de Netlify, que tiene salida a internet. Las claves solo existen como variables de entorno del sitio.
+- **Automatización:** la función programada `voltio-cron` (cada hora, minuto 7 UTC) lanza la detección RSS y las propuestas de imágenes; `voltio-deploy-check` comprueba almacenamiento y proveedores tras cada despliegue y deja el resultado en los registros con el prefijo `[voltio-diagnostico]`.
+- **Variables:** `SESSION_SECRET`, `CRON_SECRET`, `NEXT_PUBLIC_SITE_URL`, `ADMIN_EMAIL` y `ADMIN_PASSWORD` (primera cuenta); opcionales `PEXELS_API_KEY`, `OPENVERSE_CLIENT_ID` y `OPENVERSE_CLIENT_SECRET`.
 
 ## Monetización
 

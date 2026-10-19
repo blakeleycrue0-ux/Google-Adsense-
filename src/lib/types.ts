@@ -18,10 +18,8 @@ export interface ImageRef {
 /** Proveedores de imágenes admitidos por el sistema. */
 export type ImageProviderId =
   | "upload"
-  | "wikimedia"
   | "openverse"
   | "pexels"
-  | "unsplash"
   | "feed"
   | "press"
   | "retailer"
@@ -38,7 +36,6 @@ export type LicenseCode =
   | "cc-by"
   | "cc-by-sa"
   | "pexels"
-  | "unsplash"
   | "press"
   | "retailer"
   | "cc-by-nc"
@@ -64,7 +61,7 @@ export interface ImageMeta {
   /** Detalle del permiso (imágenes de prensa, fuentes RSS autorizadas, afiliación). */
   permissionNote?: string;
   attributionRequired: boolean;
-  /** Se sirve desde el CDN del proveedor (obligatorio en Unsplash y programas de afiliación). */
+  /** Se sirve desde el origen del proveedor (lo exigen algunos programas de afiliación). */
   hotlinked?: boolean;
   /** Punto de interés para el recorte con object-fit: cover (porcentajes). */
   focalX?: number;
@@ -96,8 +93,6 @@ export interface ImageCandidate {
   permissionNote?: string;
   /** Se debe enlazar desde el CDN del proveedor en vez de copiarla. */
   hotlink?: boolean;
-  /** URL que hay que notificar al seleccionar (Unsplash download_location). */
-  trackUrl?: string;
   usable: boolean;
   blockedReason?: string;
   /** Coincide con el contenido (modelo exacto o tema del artículo). */

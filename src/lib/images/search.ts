@@ -112,9 +112,9 @@ export async function searchImages(
   const configured = providerInfo().filter((p) => p.configured).map((p) => p.id);
   const providers = (opts.providers?.length ? opts.providers : configured).filter((p) => configured.includes(p));
   const keywords = keywordsFor(target, query);
-  const orientation = type === "phone" ? "portrait" : "landscape";
+  const kind = type === "phone" ? "phone" : "cover";
 
-  const settled = await Promise.allSettled(providers.map((p) => searchProvider(p, query, { orientation, perPage: 15 })));
+  const settled = await Promise.allSettled(providers.map((p) => searchProvider(p, query, { kind, perPage: 20 })));
   const errors: ImageSearch["errors"] = [];
   const candidates: ImageCandidate[] = [];
   settled.forEach((r, i) => {

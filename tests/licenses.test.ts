@@ -27,8 +27,8 @@ describe("licencias", () => {
   });
 
   it("genera la atribución con autor, procedencia y licencia", () => {
-    expect(attributionText({ author: "Ana", licenseName: "CC BY-SA 4.0", provider: "wikimedia", license: "cc-by-sa" })).toBe(
-      "Foto: Ana · vía Wikimedia Commons · CC BY-SA 4.0",
+    expect(attributionText({ author: "Ana", licenseName: "CC BY-SA 4.0", provider: "openverse", license: "cc-by-sa" })).toBe(
+      "Foto: Ana · vía Openverse · CC BY-SA 4.0",
     );
   });
 });

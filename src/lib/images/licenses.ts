@@ -16,7 +16,6 @@ export const LICENSES: Record<
   "cc-by": { name: "CC BY", url: "https://creativecommons.org/licenses/by/4.0/deed.es", usable: true, attribution: true },
   "cc-by-sa": { name: "CC BY-SA", url: "https://creativecommons.org/licenses/by-sa/4.0/deed.es", usable: true, attribution: true },
   pexels: { name: "Licencia de Pexels", url: "https://www.pexels.com/es-es/licencia/", usable: true, attribution: true },
-  unsplash: { name: "Licencia de Unsplash", url: "https://unsplash.com/es/licencia", usable: true, attribution: true },
   press: { name: "Imagen de prensa (con permiso)", usable: true, attribution: true },
   retailer: { name: "Imagen de tienda / programa de afiliación", usable: true, attribution: false },
   "cc-by-nc": { name: "CC BY-NC", usable: false, attribution: true, reason: "No permite uso comercial (la web tiene publicidad)." },
@@ -53,10 +52,8 @@ export function isUsable(code: LicenseCode) {
 /** Texto de atribución que se muestra junto a la imagen y en la página de créditos. */
 export function attributionText(meta: Pick<ImageMeta, "author" | "licenseName" | "provider" | "license">) {
   const via: Record<string, string> = {
-    wikimedia: "Wikimedia Commons",
     openverse: "Openverse",
     pexels: "Pexels",
-    unsplash: "Unsplash",
     press: "prensa",
     feed: "fuente",
   };

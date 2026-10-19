@@ -6,7 +6,7 @@ import { db, newId } from "@/lib/db";
 import { slugify } from "@/lib/format";
 import type { ImageCandidate, ImageMeta, ImageRef, ImageTargetType, LicenseCode, MediaItem } from "@/lib/types";
 import { attributionText, isUsable, LICENSES } from "./licenses";
-import { trackUnsplashDownload, userAgent } from "./providers";
+import { userAgent } from "./providers";
 
 const MAX_DOWNLOAD = 25 * 1024 * 1024;
 const MASTER_WIDTH = 2400;
@@ -120,7 +120,6 @@ export async function importCandidate(c: ImageCandidate, kind: "cover" | "phone"
   const meta = metaFromCandidate(c, user);
   if (c.hotlink) {
     if (c.width && c.width < MIN_WIDTH[kind] && kind === "cover") throw new ImportError("Resolución insuficiente para portada.");
-    if (c.trackUrl) await trackUnsplashDownload(c.trackUrl);
     return { src: c.fullUrl, alt, width: c.width, height: c.height, credit: attributionText(meta), meta };
   }
   const buf = await safeDownload(c.fullUrl);
