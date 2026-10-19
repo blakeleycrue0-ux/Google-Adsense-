@@ -42,5 +42,7 @@ export async function GET(req: Request) {
   // Una línea corta: en Netlify las líneas largas de las rutas no siempre llegan a los registros.
   const summary = providers.map((p) => (p.ok ? `${p.provider}=ok ${p.results} resultados (${p.usable} utilizables) ${p.ms}ms` : `${p.provider}=error ${p.error}`));
   console.warn(`[voltio-diagnostico] almacenamiento=${storage.kind}:${storage.ok ? "ok" : `error ${storage.error ?? ""}`} · ${summary.join(" · ")}`);
-  return NextResponse.json(report);
+  // 503 si algo falla, para que el estado sea visible en los registros de peticiones.
+  const healthy = storage.ok && providers.every((p) => p.ok && (p.results ?? 0) > 0);
+  return NextResponse.json(report, { status: healthy ? 200 : 503 });
 }

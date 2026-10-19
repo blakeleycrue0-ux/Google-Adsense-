@@ -35,13 +35,26 @@ export class BlobsAdapter implements DataAdapter {
     return ok;
   }
 
-  /** Antes de la primera escritura de una colección se materializa su contenido de demostración. */
-  private async ensureSeeded(collection: CollectionName) {
-    if (await this.seeded(collection)) return;
-    const store = data();
-    await Promise.all(seedCollection(collection).map((d) => store.setJSON(docKey(collection, d.id), d)));
-    await store.set(`seeded/${collection}`, new Date().toISOString());
-    this.seededCache.add(collection);
+  private seeding = new Map<CollectionName, Promise<void>>();
+
+  /**
+   * Antes de la primera escritura de una colección se materializa su contenido
+   * de demostración. Las escrituras simultáneas comparten una única siembra.
+   */
+  private ensureSeeded(collection: CollectionName) {
+    let pending = this.seeding.get(collection);
+    if (!pending) {
+      pending = (async () => {
+        if (await this.seeded(collection)) return;
+        const store = data();
+        await Promise.all(seedCollection(collection).map((d) => store.setJSON(docKey(collection, d.id), d)));
+        await store.set(`seeded/${collection}`, new Date().toISOString());
+        this.seededCache.add(collection);
+      })();
+      this.seeding.set(collection, pending);
+      pending.catch(() => this.seeding.delete(collection));
+    }
+    return pending;
   }
 
   async list<K extends CollectionName>(collection: K): Promise<Collections[K][]> {
