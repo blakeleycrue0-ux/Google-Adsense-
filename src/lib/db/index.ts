@@ -11,7 +11,10 @@ export function db(): DataAdapter {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   // Prioridad: Supabase (si está configurado) → Netlify Blobs (en Netlify) → ficheros locales.
-  const onNetlify = process.env.STORAGE_DRIVER === "netlify-blobs" || Boolean(process.env.NETLIFY_BLOBS_CONTEXT);
+  // Durante `next build` Blobs no está disponible: se prerenderiza con los datos del repositorio
+  // y las páginas se regeneran (ISR) con los datos de Blobs en cuanto se despliegan.
+  const building = process.env.NEXT_PHASE === "phase-production-build";
+  const onNetlify = !building && (process.env.STORAGE_DRIVER === "netlify-blobs" || Boolean(process.env.NETLIFY_BLOBS_CONTEXT));
   adapter = url && key ? new SupabaseAdapter(url, key) : onNetlify ? new BlobsAdapter() : new FileAdapter();
   return adapter;
 }
