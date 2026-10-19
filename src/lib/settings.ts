@@ -28,7 +28,7 @@ export function defaultSettings(): Settings {
     ads: {
       enabled: Boolean(process.env.NEXT_PUBLIC_ADSENSE_CLIENT),
       client: process.env.NEXT_PUBLIC_ADSENSE_CLIENT || "",
-      showPlaceholders: true,
+      showPlaceholders: false,
       slots: Object.fromEntries(AD_PLACEMENTS.map((p) => [p.id, emptySlot()])) as Settings["ads"]["slots"],
     },
     consent: { mode: "builtin" },

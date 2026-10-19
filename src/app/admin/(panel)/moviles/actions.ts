@@ -22,8 +22,7 @@ const schema = z.object({
   releaseYear: num.int().min(2015).max(2100),
   os: z.enum(["android", "ios"]),
   summary: z.string().trim().min(10).max(400),
-  imageSrc: z.string().trim().min(1, "Añade una imagen"),
-  imageAlt: z.string().trim().min(3, "Añade un texto alternativo a la imagen"),
+  imageAlt: z.string().trim().max(300).optional(),
   officialUrl: z.string().trim().url().or(z.literal("")),
   performanceTier: z.enum(["basica", "media", "alta", "tope"]),
   displayInches: num.positive(),
@@ -101,7 +100,9 @@ export async function savePhone(_: ActionResult, form: FormData): Promise<Action
     releaseYear: d.releaseYear,
     os: d.os,
     summary: d.summary,
-    image: { src: d.imageSrc, alt: d.imageAlt, illustrative: existing?.image.src === d.imageSrc ? existing.image.illustrative : false },
+    // La fotografía se gestiona en Imágenes; aquí solo se edita su texto alternativo.
+    image: existing ? { ...existing.image, alt: d.imageAlt || existing.image.alt } : { src: "", alt: d.imageAlt || `Fotografía del ${d.brand} ${d.model}` },
+    colors: String(form.get("colors") ?? "").split(",").map((c) => c.trim()).filter(Boolean),
     officialUrl: d.officialUrl || undefined,
     performanceTier: d.performanceTier,
     specs: {

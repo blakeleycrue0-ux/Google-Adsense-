@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import { Photo } from "@/components/ui/Photo";
 import Link from "next/link";
 import { RowStory } from "@/components/news/Story";
 import { SearchIcon } from "@/components/ui/Icons";
@@ -75,7 +75,7 @@ export default async function SearchPage({ searchParams }: PageProps<"/buscar">)
                 <li key={ph.id}>
                   <Link href={phoneHref(ph)} className="group flex items-center gap-4 py-3">
                     <span className="relative h-16 w-12 shrink-0 overflow-hidden rounded-xs bg-surface">
-                      <Image src={ph.image.src} alt="" fill sizes="48px" className="object-contain" />
+                      <Photo image={ph.image} alt="" fit="contain" sizes="48px" />
                     </span>
                     <span>
                       <span className="block font-medium">

@@ -20,6 +20,9 @@ export async function saveSource(_: ActionResult, form: FormData): Promise<Actio
   const parsed = schema.safeParse(Object.fromEntries(form));
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0].message };
   const d = parsed.data;
+  if (form.get("imagesReusable") === "on" && !String(form.get("imagePermissionNote") ?? "").trim()) {
+    return { ok: false, message: "Indica dónde consta el permiso para reutilizar las imágenes de esta fuente." };
+  }
   const existing = d.id ? await db().get("sources", d.id) : null;
   await db().put("sources", {
     ...(existing ?? {}),
@@ -30,7 +33,19 @@ export async function saveSource(_: ActionResult, form: FormData): Promise<Actio
     language: d.language,
     defaultCategoryId: d.defaultCategoryId || undefined,
     active: form.get("active") === "on",
+    imagesReusable: form.get("imagesReusable") === "on",
+    imagePermissionNote: String(form.get("imagePermissionNote") ?? "").trim().slice(0, 300) || undefined,
   });
+  // Si cambia el permiso sobre sus imágenes, se recalculan las propuestas de lo detectado.
+  if (existing && Boolean(existing.imagesReusable) !== (form.get("imagesReusable") === "on")) {
+    const detected = (await db().list("detected")).filter((x) => x.sourceId === existing.id);
+    await Promise.all(
+      detected.flatMap((x) => [
+        db().remove("imageSearches", `detected:${x.id}`),
+        ...(x.draftPostId ? [db().remove("imageSearches", `post:${x.draftPostId}`)] : []),
+      ]),
+    );
+  }
   revalidatePath("/admin/fuentes");
   return { ok: true, message: existing ? "Fuente actualizada." : "Fuente añadida." };
 }

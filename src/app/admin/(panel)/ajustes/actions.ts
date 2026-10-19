@@ -69,7 +69,7 @@ export async function saveAds(_: ActionResult, form: FormData): Promise<ActionRe
     const format = String(form.get(`format_${p.id}`) ?? "auto") as Settings["ads"]["slots"][AdPlacement]["format"];
     slots[p.id] = { slotId, enabled: form.get(`enabled_${p.id}`) === "on", format: ["auto", "fluid", "rectangle", "horizontal"].includes(format) ? format : "auto" };
   }
-  await db().saveSettings({ ...cur, ads: { enabled, client, showPlaceholders: form.get("showPlaceholders") === "on", slots }, updatedAt: new Date().toISOString() });
+  await db().saveSettings({ ...cur, ads: { enabled, client, showPlaceholders: false, slots }, updatedAt: new Date().toISOString() });
   revalidateSite();
   return { ok: true, message: "Configuración de publicidad guardada." };
 }

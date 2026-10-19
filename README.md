@@ -19,7 +19,7 @@ npm run dev                  # http://localhost:3000
 - La web arranca con **contenido de demostración** claramente señalado (aviso superior, etiquetas «Demo», precios «no verificados»).
 - Panel: `http://localhost:3000/admin`. En desarrollo, la primera visita muestra un formulario para crear la cuenta de administración.
 - `npm run data:reset` borra los datos locales y vuelve al contenido de demostración.
-- Otros scripts: `npm run build`, `npm start`, `npm run lint`, `npm run typecheck`, `npm run images:demo`.
+- Otros scripts: `npm run build`, `npm start`, `npm run lint`, `npm run typecheck`, `npm test` (pruebas unitarias), `npm run images:demo`.
 
 ## Dirección visual
 
@@ -86,12 +86,42 @@ Artículos (borrador, revisión, programación, publicación, retirada, vista pr
 
 Nada se publica automáticamente. Solo se almacenan titular, enlace, fecha y el extracto que publica la propia fuente.
 
+## Imágenes con licencia
+
+Las fotografías se gestionan en **Panel → Imágenes**. El sistema propone, comprueba y registra; nunca aprueba ni publica por sí solo.
+
+**Fuentes admitidas**
+
+| Fuente | Clave | Uso |
+|---|---|---|
+| Wikimedia Commons | — | Fotos de productos y temas con licencias libres. Atribución obligatoria en CC BY/BY-SA. |
+| Openverse | `OPENVERSE_TOKEN` (opcional) | Agregador de imágenes CC; se piden solo licencias con uso comercial y modificación. |
+| Pexels | `PEXELS_API_KEY` | Fotografía genérica para noticias. |
+| Unsplash | `UNSPLASH_ACCESS_KEY` | Fotografía genérica; se sirve desde su CDN y se notifica cada uso, como exigen sus condiciones. |
+| Feeds RSS | — | Solo si marcas la fuente como autorizada (Fuentes → «La fuente autoriza reutilizar…») e indicas dónde consta el permiso. |
+| Prensa / afiliación | — | «Imagen por URL» o subida, indicando el permiso. Opción de servirla desde su origen si el programa lo exige. |
+| Subida propia | — | Con licencia y autoría declaradas. |
+
+**Reglas que aplica el sistema**
+
+- Se descartan licencias no comerciales (NC), sin obras derivadas (ND) y desconocidas. No se copian imágenes de otros medios sin permiso.
+- **Móviles:** la imagen debe mencionar el modelo exacto; se rechazan otros números de modelo, variantes (Pro, Ultra, Plus…), la versión 4G de un modelo 5G y colores que no se comercializan (campo «Colores» de la ficha).
+- **Noticias:** relevancia por palabras clave del titular y etiquetas (traducidas al inglés para los bancos internacionales); resolución mínima de 1200 px de ancho y bonificación por proporción horizontal.
+- Se guarda la procedencia, licencia, autoría, permiso, quién la aprobó y cuándo. La atribución se muestra junto a la imagen y en `/creditos-imagenes`.
+- Las imágenes se optimizan a WebP (máx. 2400 px) y `next/image` genera los tamaños responsive; el punto focal elegido en el panel controla el recorte con `object-fit: cover`.
+- La importación por URL valida el destino (sin redes privadas, sin redirecciones a ellas), el tipo y el tamaño.
+- Un artículo nuevo no se puede publicar sin una imagen aprobada.
+
+**Automatización:** tras cada detección RSS (botón o cron) se buscan propuestas para lo detectado y para contenidos pendientes. El borrador creado desde una noticia hereda su propuesta; basta con revisarla y pulsar «Aprobar propuesta». Si no hay ninguna imagen autorizada, el contenido queda pendiente de selección manual.
+
+> Los proveedores requieren salida a internet hacia sus dominios. Si un proveedor no responde, el panel muestra el error real («Comprobar conexión»); nunca se simulan resultados.
+
 ## Monetización
 
 ### Google AdSense
 - Configura el ID de editor (`ca-pub-…`) y los IDs de bloque por ubicación en **Panel → Publicidad** (o `NEXT_PUBLIC_ADSENSE_CLIENT`).
 - Ubicaciones: portada (tras destacados y a mitad), artículo (dentro del texto y al final), barra lateral y listados. Cada espacio **reserva su altura** (sin saltos de maquetación) y lleva la etiqueta «Publicidad».
-- Sin AdSense activo no se carga ningún script; opcionalmente se ven huecos señalizados como «inactivos» para revisar la maqueta (desactivables).
+- Sin AdSense activo no se carga ningún script ni se muestra ningún hueco en la web pública; las ubicaciones quedan preparadas en el código.
 - `ads.txt` se genera automáticamente con tu ID.
 
 ### Consentimiento (EEE)

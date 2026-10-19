@@ -5,19 +5,18 @@ import { previewMarkdown, savePost } from "@/app/admin/(panel)/articulos/actions
 import { isoToMadridLocal } from "@/lib/format";
 import type { Author, Category, Post } from "@/lib/types";
 import { ActionForm, SubmitButton } from "./forms";
-import { ImageInput } from "./ImageInput";
 import { Field, Panel, StatusPill } from "./ui";
 
 export function PostEditor({
   post,
   categories,
   authors,
-  library,
+  image,
 }: {
   post?: Post;
   categories: Category[];
   authors: Author[];
-  library: { url: string; alt: string }[];
+  image: { state: "approved" | "proposed" | "pending"; credit?: string };
 }) {
   const [tab, setTab] = useState<"write" | "preview">("write");
   const [body, setBody] = useState(post?.body ?? "");
@@ -173,12 +172,28 @@ export function PostEditor({
 
         <Panel title="Imagen principal">
           <div className="space-y-4">
-            <ImageInput name="coverSrc" defaultValue={post?.cover.src} library={library} altFieldName="coverAlt" />
+            <div className={`relative aspect-[16/10] overflow-hidden rounded-sm bg-surface ${image.state === "approved" ? "" : "border border-dashed border-line-strong"}`}>
+              {post?.cover.src ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={post.cover.src} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span className="flex h-full items-center justify-center text-[12px] text-muted">Sin imagen</span>
+              )}
+            </div>
+            <p className="text-[12px] text-muted">
+              {image.state === "approved" && <>✓ Imagen aprobada{image.credit ? ` · ${image.credit}` : ""}</>}
+              {image.state === "proposed" && <>Hay una propuesta de imagen esperando tu aprobación.</>}
+              {image.state === "pending" && <>{post?.cover.illustrative ? "Ilustración de demostración: sustitúyela por una fotografía autorizada." : "Pendiente de selección."}</>}
+            </p>
+            {post ? (
+              <a href={`/admin/imagenes/post/${post.id}`} className="btn-secondary btn-sm w-full">
+                {image.state === "approved" ? "Cambiar imagen" : image.state === "proposed" ? "Revisar propuesta" : "Elegir imagen"}
+              </a>
+            ) : (
+              <p className="text-[12px] text-muted">Guarda el borrador para buscar y asignar una imagen.</p>
+            )}
             <Field label="Texto alternativo" hint="Describe la imagen para personas que no pueden verla.">
               <input name="coverAlt" defaultValue={post?.cover.alt} className="field" />
-            </Field>
-            <Field label="Crédito / licencia" hint="Usa solo imágenes con derechos de uso.">
-              <input name="coverCredit" defaultValue={post?.cover.credit} className="field" placeholder="Foto: Apple" />
             </Field>
           </div>
         </Panel>

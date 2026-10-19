@@ -7,12 +7,14 @@ import { requireUser } from "@/lib/auth";
 import { isPublished } from "@/lib/content";
 import { db } from "@/lib/db";
 import { deletePost } from "../actions";
+import { attributionText } from "@/lib/images/licenses";
+import { imageState } from "@/lib/images/state";
 
 export default async function EditPost({ params, searchParams }: PageProps<"/admin/articulos/[id]">) {
   await requireUser();
   const { id } = await params;
   const aviso = (await searchParams).aviso;
-  const [post, categories, authors, media] = await Promise.all([db().get("posts", id), db().list("categories"), db().list("authors"), db().list("media")]);
+  const [post, categories, authors, search] = await Promise.all([db().get("posts", id), db().list("categories"), db().list("authors"), db().get("imageSearches", `post:${id}`)]);
   if (!post) notFound();
   return (
     <AdminPage
@@ -40,7 +42,7 @@ export default async function EditPost({ params, searchParams }: PageProps<"/adm
           Artículo de demostración: revísalo, verifica las fuentes y sustituye la ilustración antes de lanzar el sitio, o elimínalo.
         </p>
       )}
-      <PostEditor post={post} categories={categories.sort((a, b) => a.order - b.order)} authors={authors} library={media.map((m) => ({ url: m.url, alt: m.alt }))} />
+      <PostEditor post={post} categories={categories.sort((a, b) => a.order - b.order)} authors={authors} image={{ state: imageState(post.cover, search), credit: post.cover.meta ? attributionText(post.cover.meta) : undefined }} />
     </AdminPage>
   );
 }

@@ -7,17 +7,30 @@ import { deleteMedia, updateMediaAlt, uploadMedia } from "./actions";
 
 export default async function MediaPage() {
   await requireUser();
-  const [media, posts] = await Promise.all([db().list("media"), db().list("posts")]);
-  const used = (url: string) => posts.some((p) => p.cover.src === url || p.body.includes(url));
+  const [media, posts, phones] = await Promise.all([db().list("media"), db().list("posts"), db().list("phones")]);
+  const used = (url: string) => posts.some((p) => p.cover.src === url || p.body.includes(url)) || phones.some((p) => p.image.src === url);
   return (
-    <AdminPage title="Imágenes" description="Las imágenes se convierten a WebP y se limitan a 2000 px. Sube solo imágenes propias o con licencia de uso.">
+    <AdminPage title="Biblioteca de imágenes" description="Las imágenes se convierten a WebP y se limitan a 2000 px. Sube solo imágenes propias o con licencia de uso.">
       <Panel title="Subir imagen" className="mb-6">
-        <ActionForm action={uploadMedia} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+        <ActionForm action={uploadMedia} className="grid gap-3 sm:grid-cols-2">
           <Field label="Archivo (JPG, PNG, WebP, AVIF, GIF · máx. 8 MB)">
             <input type="file" name="file" accept="image/jpeg,image/png,image/webp,image/avif,image/gif" required className="field py-1.5 text-[13px]" />
           </Field>
           <Field label="Texto alternativo"><input name="alt" className="field" placeholder="Describe la imagen" /></Field>
-          <SubmitButton>Subir</SubmitButton>
+          <Field label="Licencia o permiso">
+            <select name="license" defaultValue="own" className="field">
+              <option value="own">Imagen propia</option>
+              <option value="press">Imagen de prensa (con permiso)</option>
+              <option value="cc0">CC0 (dominio público)</option>
+              <option value="pdm">Dominio público</option>
+              <option value="cc-by">CC BY</option>
+              <option value="cc-by-sa">CC BY-SA</option>
+            </select>
+          </Field>
+          <Field label="Autoría"><input name="author" className="field" /></Field>
+          <Field label="Página de origen"><input name="sourceUrl" className="field font-mono text-[12px]" placeholder="https://…" /></Field>
+          <Field label="Permiso (imágenes de prensa)"><input name="permissionNote" className="field" /></Field>
+          <div><SubmitButton>Subir</SubmitButton></div>
         </ActionForm>
       </Panel>
       {media.length === 0 ? (
@@ -31,6 +44,7 @@ export default async function MediaPage() {
               <div className="space-y-2 p-3">
                 <p className="truncate font-mono text-[11px] text-muted" title={m.url}>{m.url}</p>
                 <p className="text-[12px] text-muted">{m.width}×{m.height} · {Math.round(m.size / 1024)} KB · {formatDate(m.uploadedAt)}</p>
+                <p className="text-[12px] text-muted">{m.meta ? `${m.meta.licenseName}${m.meta.author ? ` · ${m.meta.author}` : ""}` : "Sin licencia registrada"}</p>
                 <ActionForm action={updateMediaAlt} className="flex gap-2">
                   <input type="hidden" name="id" value={m.id} />
                   <input name="alt" defaultValue={m.alt} placeholder="Texto alternativo" className="field h-8 text-[13px]" />

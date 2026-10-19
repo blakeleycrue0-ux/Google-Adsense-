@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import { Photo } from "@/components/ui/Photo";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Ad } from "@/components/ads/Ad";
@@ -9,6 +9,7 @@ import { TextStory } from "@/components/news/Story";
 import { CompareToggle } from "@/components/phones/CompareToggle";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { DemoBadge } from "@/components/ui/Badge";
+import { ImageCredit } from "@/components/ui/ImageCredit";
 import { ArrowRight, ArrowUpRight, CheckIcon, MinusIcon } from "@/components/ui/Icons";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { getCategoryMap, getPhoneBySlug, getPhones, getStoreMap, search } from "@/lib/content";
@@ -128,12 +129,12 @@ export default async function PhonePage({ params }: PageProps<"/moviles/[slug]">
         <div className="mt-8 grid gap-10 lg:grid-cols-12 lg:gap-12">
           <div className="lg:col-span-5">
             <div className="lg:sticky lg:top-[calc(var(--header-h)+24px)]">
-              <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-surface">
-                <Image src={phone.image.src} alt={phone.image.alt} fill priority sizes="(min-width: 1024px) 480px, 100vw" className="img-reveal object-contain p-8" />
+              <div className="relative mx-auto aspect-[4/5] max-w-[300px] overflow-hidden rounded-sm bg-surface sm:max-w-[380px] lg:max-w-none">
+                <Photo image={phone.image} fit="contain" priority sizes="(min-width: 1024px) 480px, 320px" className="img-reveal p-6 sm:p-8" />
               </div>
-              {phone.image.illustrative && (
-                <p className="mt-2 text-[12px] text-muted">Ilustración genérica. Sustitúyela por una imagen oficial con derechos de uso.</p>
-              )}
+              <p className="mt-2 text-center text-[12px] text-muted lg:text-left">
+                {phone.image.illustrative ? "Ilustración genérica a la espera de una fotografía autorizada del modelo." : <ImageCredit image={phone.image} />}
+              </p>
             </div>
           </div>
 
@@ -280,7 +281,7 @@ export default async function PhonePage({ params }: PageProps<"/moviles/[slug]">
               return (
                 <li key={alt.id} className="group grid grid-cols-[96px_1fr] gap-4 border-b border-line pb-6">
                   <Link href={phoneHref(alt)} className="relative aspect-[4/5] overflow-hidden rounded-sm bg-surface">
-                    <Image src={alt.image.src} alt={alt.image.alt} fill sizes="96px" className="object-contain p-1.5" />
+                    <Photo image={alt.image} fit="contain" sizes="96px" className="p-1.5" />
                   </Link>
                   <div>
                     <p className="kicker text-muted">{alt.brand}</p>

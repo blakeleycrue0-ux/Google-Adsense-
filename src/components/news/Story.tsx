@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { Photo } from "@/components/ui/Photo";
 import Link from "next/link";
 import { formatSmart } from "@/lib/format";
 import type { Category, Post } from "@/lib/types";
@@ -18,14 +18,14 @@ export function Cover({
 }) {
   return (
     <div className={`relative overflow-hidden rounded-sm bg-surface ${className}`}>
-      <Image
-        src={post.cover.src}
-        alt={post.cover.alt}
-        fill
-        sizes={sizes}
-        priority={priority}
-        className="img-reveal object-cover transition-transform duration-[900ms] ease-[var(--ease-out-soft)] group-hover:scale-[1.025]"
-      />
+      {post.cover.src && (
+        <Photo
+          image={post.cover}
+          sizes={sizes}
+          priority={priority}
+          className="img-reveal transition-transform duration-[900ms] ease-[var(--ease-out-soft)] group-hover:scale-[1.025]"
+        />
+      )}
     </div>
   );
 }

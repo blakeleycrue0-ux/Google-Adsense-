@@ -13,8 +13,7 @@ export async function getPhoneLites(): Promise<PhoneLite[]> {
       model: p.model,
       year: p.releaseYear,
       os: p.os,
-      image: p.image.src,
-      imageAlt: p.image.alt,
+      photo: p.image,
       price: o?.price ?? null,
       priceIsDemo: o?.source === "demo",
       storeName: o ? (stores.get(o.storeId)?.name ?? null) : null,
@@ -30,7 +29,7 @@ export async function getPhoneLites(): Promise<PhoneLite[]> {
       tier: p.performanceTier,
       chipset: p.specs.chipset,
       ip: p.specs.ipRating ?? null,
-      isDemo: Boolean(p.isDemo || p.image.illustrative),
+      isDemo: Boolean(p.image.illustrative),
     };
   });
 }

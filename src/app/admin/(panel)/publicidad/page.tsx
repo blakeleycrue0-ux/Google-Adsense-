@@ -29,7 +29,7 @@ export default async function AdsPage() {
             <Field label="ID de editor" hint="AdSense → Cuenta → Información de la cuenta. También puede definirse con NEXT_PUBLIC_ADSENSE_CLIENT."><input name="client" defaultValue={s.ads.client} placeholder="ca-pub-0000000000000000" className="field font-mono" /></Field>
             <div className="space-y-3 pt-6 text-[13px]">
               <label className="flex items-center gap-2"><input type="checkbox" name="enabled" defaultChecked={s.ads.enabled} className="size-4 accent-ink" /> Cargar AdSense en la web</label>
-              <label className="flex items-center gap-2"><input type="checkbox" name="showPlaceholders" defaultChecked={s.ads.showPlaceholders} className="size-4 accent-ink" /> Mostrar huecos reservados mientras los bloques estén inactivos (solo maqueta)</label>
+              <p className="text-[12px] text-muted">Mientras un bloque esté inactivo no se muestra nada en la web pública.</p>
             </div>
           </div>
         </Panel>

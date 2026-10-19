@@ -28,6 +28,7 @@ export async function Footer() {
         { href: "/legal/sobre-nosotros", label: "Sobre nosotros" },
         { href: "/contacto", label: "Contacto" },
         { href: "/legal/publicidad-y-afiliados", label: "Publicidad y afiliados" },
+        { href: "/creditos-imagenes", label: "Créditos de imágenes" },
         { href: "/feed.xml", label: "RSS" },
       ],
     },

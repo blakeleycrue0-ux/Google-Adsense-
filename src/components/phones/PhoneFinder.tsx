@@ -1,12 +1,12 @@
 "use client";
 
-import Image from "next/image";
+import { Photo } from "@/components/ui/Photo";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { CloseIcon } from "@/components/ui/Icons";
 import { TIER_LABEL, TIER_ORDER } from "@/lib/phones";
-import type { OS, PerformanceTier } from "@/lib/types";
+import type { ImageRef, OS, PerformanceTier } from "@/lib/types";
 import { CompareToggle } from "./CompareToggle";
 
 export interface PhoneLite {
@@ -15,8 +15,7 @@ export interface PhoneLite {
   model: string;
   year: number;
   os: OS;
-  image: string;
-  imageAlt: string;
+  photo: ImageRef;
   price: number | null;
   priceIsDemo: boolean;
   storeName: string | null;
@@ -296,7 +295,7 @@ export function PhoneFinder({ phones }: { phones: PhoneLite[] }) {
         ) : (
           <ul className={`grid grid-cols-1 gap-x-6 transition-opacity sm:grid-cols-2 xl:grid-cols-3 ${pending ? "opacity-60" : ""}`}>
             {results.map((p) => (
-              <li key={p.slug} className="animate-fade-up border-b border-line py-6">
+              <li key={p.slug} className="animate-fade-up border-b border-line py-4 sm:py-6">
                 <PhoneTile p={p} />
               </li>
             ))}
@@ -338,30 +337,31 @@ export function PhoneFinder({ phones }: { phones: PhoneLite[] }) {
 function PhoneTile({ p }: { p: PhoneLite }) {
   const name = `${p.brand} ${p.model}`;
   return (
-    <article className="group flex h-full flex-col">
+    <article className="group grid h-full grid-cols-[92px_1fr] gap-x-4 sm:flex sm:flex-col">
+      <Link href={`/moviles/${p.slug}`} className="relative block aspect-[4/5] self-start overflow-hidden rounded-sm bg-surface sm:w-full" tabIndex={-1} aria-hidden>
+        <Photo
+          image={p.photo}
+          alt=""
+          fit="contain"
+          sizes="(min-width: 1280px) 300px, (min-width: 640px) 45vw, 92px"
+          className="img-reveal p-2 transition-transform duration-700 ease-[var(--ease-out-soft)] group-hover:scale-[1.03] sm:p-4"
+        />
+        {p.isDemo && (
+          <span className="absolute left-1.5 top-1.5 hidden rounded-xs bg-paper/90 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted sm:inline">
+            Ilustración
+          </span>
+        )}
+      </Link>
+      <div className="flex min-w-0 flex-col sm:flex-1">
       <Link href={`/moviles/${p.slug}`} className="block">
-        <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-surface">
-          <Image
-            src={p.image}
-            alt={p.imageAlt}
-            fill
-            sizes="(min-width: 1280px) 300px, (min-width: 640px) 45vw, 100vw"
-            className="img-reveal object-contain p-4 transition-transform duration-700 ease-[var(--ease-out-soft)] group-hover:scale-[1.03]"
-          />
-          {p.isDemo && (
-            <span className="absolute left-2 top-2 rounded-xs bg-paper/90 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted">
-              Ilustración
-            </span>
-          )}
-        </div>
-        <p className="kicker mt-4 text-muted">
+        <p className="kicker text-muted sm:mt-4">
           {p.brand} · {p.year}
         </p>
-        <h3 className="mt-1.5 text-[19px] font-semibold tracking-[-0.02em]">
+        <h3 className="mt-1 text-[17px] font-semibold tracking-[-0.02em] sm:mt-1.5 sm:text-[19px]">
           <span className="link-title">{name}</span>
         </h3>
       </Link>
-      <ul className="mt-3 space-y-1 text-[13px] text-ink-2">
+      <ul className="mt-2 space-y-0.5 text-[12px] text-ink-2 sm:mt-3 sm:space-y-1 sm:text-[13px]">
         <li>
           {p.inches.toLocaleString("es-ES")}″ · {p.refreshHz} Hz · {p.displayType.split(" ")[0]}
         </li>
@@ -373,7 +373,7 @@ function PhoneTile({ p }: { p: PhoneLite }) {
           {p.battery.toLocaleString("es-ES")} mAh{p.charging ? ` · ${p.charging} W` : ""} · {TIER_LABEL[p.tier]}
         </li>
       </ul>
-      <div className="mt-auto flex items-end justify-between gap-3 pt-5">
+      <div className="mt-3 flex items-end justify-between gap-3 sm:mt-auto sm:pt-5">
         <div>
           {p.price !== null ? (
             <>
@@ -388,6 +388,7 @@ function PhoneTile({ p }: { p: PhoneLite }) {
           )}
         </div>
         <CompareToggle slug={p.slug} name={name} />
+      </div>
       </div>
     </article>
   );

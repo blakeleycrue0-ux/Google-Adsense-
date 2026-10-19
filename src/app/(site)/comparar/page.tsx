@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import { Photo } from "@/components/ui/Photo";
 import Link from "next/link";
 import { AffiliateNote } from "@/components/commerce/AffiliateNote";
 import { BuyLink } from "@/components/commerce/BuyLink";
@@ -145,7 +145,7 @@ export default async function ComparePage({ searchParams }: PageProps<"/comparar
                       <th key={p.id} scope="col" className="min-w-[170px] border-l border-line px-4 pb-6 text-left align-top font-normal">
                         <Link href={phoneHref(p)} className="group block">
                           <div className="relative mx-auto aspect-[4/5] w-full max-w-[140px] overflow-hidden rounded-sm bg-surface">
-                            <Image src={p.image.src} alt={p.image.alt} fill sizes="140px" className="object-contain p-2" />
+                            <Photo image={p.image} fit="contain" sizes="140px" className="p-2" />
                           </div>
                           <p className="kicker mt-4 text-muted">{p.brand}</p>
                           <p className="mt-1 text-[17px] font-semibold leading-tight tracking-[-0.02em]">

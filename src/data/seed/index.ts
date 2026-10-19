@@ -20,6 +20,7 @@ const seeds: { [K in CollectionName]: Collections[K][] } = {
   media: [],
   users: [],
   messages: [],
+  imageSearches: [],
 };
 
 /** Copia profunda de la semilla para que nadie mute el original en memoria. */
