@@ -25,9 +25,11 @@ import type { ImageRef } from "@/lib/types";
 
 const ROOT = process.cwd();
 // .next/cache se conserva entre compilaciones en Netlify: no se repiten búsquedas ni descargas.
-const CACHE = path.join(ROOT, ".next/cache/voltio-fotos");
+const CACHE = path.join(ROOT, ".next/cache/voltio-fotos-v2");
 const PUBLIC = path.join(ROOT, "public/fotos");
 const OUT = path.join(ROOT, "src/data/auto-photos.json");
+// Lo lee el plugin netlify/plugins/voltio-fotos para mostrarlo en el resumen del despliegue.
+const REPORT = path.join(ROOT, ".netlify/voltio-fotos.json");
 const MAX_BYTES = 20 * 1024 * 1024;
 
 type Entry = { ref: ImageRef; file: string } | { none: true; checkedAt: string };
@@ -68,6 +70,11 @@ async function main() {
   ];
 
   let found = 0;
+  const lines: string[] = [];
+  const log = (msg: string) => {
+    console.log(`[fotos] ${msg}`);
+    lines.push(msg);
+  };
   let limited = false;
   for (const { key, alt, t } of targets) {
     const prev = index[key];
@@ -86,7 +93,7 @@ async function main() {
         candidates.push(...(await searchProvider(p, query, { kind, perPage: 20 })));
       } catch (e) {
         const msg = (e as Error).message;
-        console.log(`[fotos] ${key} · ${p}: ${msg}`);
+        log(`${key} · ${p}: ${msg}`);
         failed = true;
         if (msg.includes("429")) limited = true;
       }
@@ -106,18 +113,19 @@ async function main() {
         await fs.writeFile(path.join(CACHE, file), data);
         const meta = metaFromCandidate(c, AUTO_APPROVER);
         index[key] = { file, ref: { src: `/fotos/${file}`, alt, width: info.width, height: info.height, credit: attributionText(meta), meta } };
-        console.log(`[fotos] ${key} ← «${c.title}» (${c.licenseName}, ${c.author ?? "autor desconocido"})`);
+        log(`${key} ← «${c.title}» (${c.licenseName}, ${c.author ?? "autor desconocido"})`);
         found++;
         done = true;
         break;
       } catch (e) {
-        console.log(`[fotos] ${key}: no se pudo descargar ${c.fullUrl}: ${(e as Error).message}`);
+        log(`${key}: no se pudo descargar ${c.fullUrl}: ${(e as Error).message}`);
       }
     }
     // Solo se anota «sin foto» si la búsqueda funcionó; un fallo de red se reintenta en la próxima compilación.
     if (!done && !failed) {
       index[key] = { none: true, checkedAt: new Date().toISOString() };
-      console.log(`[fotos] ${key}: ninguna foto supera los controles («${query}»); se mantiene la ilustración`);
+      const near = candidates.length ? ` · ${candidates.length} resultados, mejor: «${candidates.map((c) => scoreCandidate(c, t, keywords)).sort((a, b) => b.score - a.score)[0].title}»` : " · sin resultados";
+      log(`${key}: ninguna supera los controles («${query}»)${near}`);
     }
   }
 
@@ -129,7 +137,10 @@ async function main() {
     out[key] = entry.ref;
   }
   await fs.writeFile(OUT, JSON.stringify(out, null, 2) + "\n");
-  console.log(`[fotos] ${found} nuevas · ${Object.keys(out).length} fotos reales en total de ${targets.length} contenidos con ilustración${limited ? " · límite de Openverse alcanzado, se continúa en la próxima compilación" : ""}`);
+  const summary = `${found} nuevas · ${Object.keys(out).length} fotos reales en total de ${targets.length} contenidos con ilustración${limited ? " · límite de Openverse alcanzado, se continúa en la próxima compilación" : ""}`;
+  console.log(`[fotos] ${summary}`);
+  await fs.mkdir(path.dirname(REPORT), { recursive: true });
+  await fs.writeFile(REPORT, JSON.stringify({ summary, lines }, null, 2));
 }
 
 main().catch((e) => {

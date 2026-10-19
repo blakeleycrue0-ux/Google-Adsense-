@@ -11,8 +11,8 @@ export type ScoreTarget =
   | { type: "phone"; phone: Pick<Phone, "brand" | "model" | "colors"> }
   | { type: "post"; post: Pick<Post, "title" | "tags"> };
 
-/** Puntuación mínima para publicar sin revisión (más exigente que la de propuesta en portadas). */
-export const AUTO_PUBLISH_MIN: Record<"cover" | "phone", number> = { cover: 70, phone: 60 };
+/** Puntuación mínima para publicar sin revisión (coincidencia con el tema y encuadre horizontal en portadas; modelo exacto en móviles). */
+export const AUTO_PUBLISH_MIN: Record<"cover" | "phone", number> = { cover: 60, phone: 60 };
 
 /** Quién figura como aprobador de las imágenes publicadas automáticamente. */
 export const AUTO_APPROVER = "Automático (Voltio)";

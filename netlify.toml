@@ -2,3 +2,6 @@
   # Incluye scripts/fotos.ts: busca fotos reales con licencia antes de compilar.
   command = "npm run build"
   publish = ".next"
+
+[[plugins]]
+  package = "./netlify/plugins/voltio-fotos"
