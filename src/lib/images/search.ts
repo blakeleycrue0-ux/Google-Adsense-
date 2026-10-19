@@ -156,7 +156,10 @@ export async function getSearch(type: ImageTargetType, id: string) {
  */
 export async function autoPropose(limit = 8, { budgetMs = 24_000 }: { budgetMs?: number } = {}) {
   // Peor caso de una búsqueda: el tiempo de espera de los proveedores más el guardado.
-  const deadline = Date.now() + budgetMs - (PROVIDER_TIMEOUT_MS + 1_000);
+  const started = Date.now();
+  const deadline = started + budgetMs - (PROVIDER_TIMEOUT_MS + 1_000);
+  // Líneas cortas en los registros del servidor para saber dónde se va el tiempo.
+  const trace = (msg: string) => console.warn(`[voltio-propuestas] +${Date.now() - started}ms ${msg}`);
   const [posts, phones, detected, searches] = await Promise.all([
     db().list("posts"),
     db().list("phones"),
@@ -173,6 +176,7 @@ export async function autoPropose(limit = 8, { budgetMs = 24_000 }: { budgetMs?:
     ...posts.filter((p) => imageState(p.cover) !== "approved" && !recent(searchId("post", p.id))).map((p) => ["post", p.id] as [ImageTargetType, string]),
     ...phones.filter((p) => imageState(p.image) !== "approved" && !recent(searchId("phone", p.id))).map((p) => ["phone", p.id] as [ImageTargetType, string]),
   ].slice(0, limit);
+  trace(`datos leídos (${posts.length} artículos, ${phones.length} móviles, ${detected.length} detectadas, ${searches.length} búsquedas) · cola ${queue.length}`);
 
   const summary = { searched: 0, proposed: 0, pending: 0, errors: [] as string[] };
   for (const [i, [type, id]] of queue.entries()) {
@@ -181,6 +185,7 @@ export async function autoPropose(limit = 8, { budgetMs = 24_000 }: { budgetMs?:
       break;
     }
     const s = await searchImages(type, id, { origin: "auto" });
+    trace(`${type}:${id} ${s ? `${s.candidates.length} candidatas` : "no encontrado"}`);
     if (!s) continue;
     summary.searched++;
     if (bestCandidate(s)) summary.proposed++;
