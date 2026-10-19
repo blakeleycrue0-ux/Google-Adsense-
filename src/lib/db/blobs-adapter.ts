@@ -25,8 +25,14 @@ const docKey = (c: string, id: string) => `d/${c}/${encodeURIComponent(id)}`;
 export class BlobsAdapter implements DataAdapter {
   readonly kind = "netlify-blobs" as const;
 
+  /** Una colección sembrada no deja de estarlo: se recuerda para ahorrar lecturas. */
+  private seededCache = new Set<CollectionName>();
+
   private async seeded(collection: CollectionName) {
-    return (await data().get(`seeded/${collection}`)) !== null;
+    if (this.seededCache.has(collection)) return true;
+    const ok = (await data().get(`seeded/${collection}`)) !== null;
+    if (ok) this.seededCache.add(collection);
+    return ok;
   }
 
   /** Antes de la primera escritura de una colección se materializa su contenido de demostración. */
@@ -35,6 +41,7 @@ export class BlobsAdapter implements DataAdapter {
     const store = data();
     await Promise.all(seedCollection(collection).map((d) => store.setJSON(docKey(collection, d.id), d)));
     await store.set(`seeded/${collection}`, new Date().toISOString());
+    this.seededCache.add(collection);
   }
 
   async list<K extends CollectionName>(collection: K): Promise<Collections[K][]> {

@@ -39,7 +39,8 @@ export async function GET(req: Request) {
       }),
   );
   const report = { at: new Date().toISOString(), storage, providers };
-  // console.warn: en Netlify las líneas de console.log de las rutas no siempre llegan a los registros.
-  console.warn(`[voltio-diagnostico] ${JSON.stringify(report)}`);
+  // Una línea corta: en Netlify las líneas largas de las rutas no siempre llegan a los registros.
+  const summary = providers.map((p) => (p.ok ? `${p.provider}=ok ${p.results} resultados (${p.usable} utilizables) ${p.ms}ms` : `${p.provider}=error ${p.error}`));
+  console.warn(`[voltio-diagnostico] almacenamiento=${storage.kind}:${storage.ok ? "ok" : `error ${storage.error ?? ""}`} · ${summary.join(" · ")}`);
   return NextResponse.json(report);
 }
