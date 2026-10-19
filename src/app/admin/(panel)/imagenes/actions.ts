@@ -173,7 +173,8 @@ export async function runAutoPropose(): Promise<ActionResult> {
   const r = await autoPropose(20);
   revalidatePath("/admin/imagenes");
   const errs = r.errors.length ? ` Errores: ${r.errors.slice(0, 3).join(" · ")}` : "";
-  return { ok: r.errors.length === 0 || r.proposed > 0, message: `${r.searched} contenidos revisados, ${r.proposed} con propuesta.${errs}` };
+  const left = r.pending ? ` Quedan ${r.pending}: vuelve a pulsar para continuar.` : "";
+  return { ok: r.errors.length === 0 || r.proposed > 0, message: `${r.searched} contenidos revisados, ${r.proposed} con propuesta.${left}${errs}` };
 }
 
 /** Comprueba la conexión real con cada proveedor configurado. */

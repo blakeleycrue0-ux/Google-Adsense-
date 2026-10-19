@@ -1,5 +1,6 @@
 import "server-only";
 import type { DataAdapter } from "./adapter";
+import { BlobsAdapter } from "./blobs-adapter";
 import { FileAdapter } from "./file-adapter";
 import { SupabaseAdapter } from "./supabase-adapter";
 
@@ -9,7 +10,12 @@ export function db(): DataAdapter {
   if (adapter) return adapter;
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  adapter = url && key ? new SupabaseAdapter(url, key) : new FileAdapter();
+  // Prioridad: Supabase (si está configurado) → Netlify Blobs (en Netlify) → ficheros locales.
+  // Durante `next build` Blobs no está disponible: se prerenderiza con los datos del repositorio
+  // y las páginas se regeneran (ISR) con los datos de Blobs en cuanto se despliegan.
+  const building = process.env.NEXT_PHASE === "phase-production-build";
+  const onNetlify = !building && (process.env.STORAGE_DRIVER === "netlify-blobs" || Boolean(process.env.NETLIFY_BLOBS_CONTEXT));
+  adapter = url && key ? new SupabaseAdapter(url, key) : onNetlify ? new BlobsAdapter() : new FileAdapter();
   return adapter;
 }
 

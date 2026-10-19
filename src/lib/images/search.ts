@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import type { DetectedItem, ImageCandidate, ImageProviderId, ImageSearch, ImageTargetType, Phone, Post } from "@/lib/types";
 import { LICENSES } from "./licenses";
 import { matchPhone, matchTopic, postKeywords, qualityScore } from "./matching";
-import { ProviderError, providerInfo, searchProvider } from "./providers";
+import { PROVIDER_TIMEOUT_MS, ProviderError, providerInfo, searchProvider } from "./providers";
 
 export { bestCandidate, imageState, searchId, type ImageState } from "./state";
 import { bestCandidate, imageState, searchId } from "./state";
@@ -112,9 +112,9 @@ export async function searchImages(
   const configured = providerInfo().filter((p) => p.configured).map((p) => p.id);
   const providers = (opts.providers?.length ? opts.providers : configured).filter((p) => configured.includes(p));
   const keywords = keywordsFor(target, query);
-  const orientation = type === "phone" ? "portrait" : "landscape";
+  const kind = type === "phone" ? "phone" : "cover";
 
-  const settled = await Promise.allSettled(providers.map((p) => searchProvider(p, query, { orientation, perPage: 15 })));
+  const settled = await Promise.allSettled(providers.map((p) => searchProvider(p, query, { kind, perPage: 20 })));
   const errors: ImageSearch["errors"] = [];
   const candidates: ImageCandidate[] = [];
   settled.forEach((r, i) => {
@@ -150,8 +150,13 @@ export async function getSearch(type: ImageTargetType, id: string) {
 /**
  * Propuestas automáticas: busca imágenes para noticias detectadas, artículos y
  * fichas que aún no tienen imagen aprobada. Nunca aprueba ni publica nada.
+ * Solo empieza una búsqueda si puede terminar dentro de `budgetMs` (las
+ * funciones de Netlify se cortan a los 30 s); lo pendiente se retoma en la
+ * siguiente ejecución.
  */
-export async function autoPropose(limit = 8) {
+export async function autoPropose(limit = 8, { budgetMs = 24_000 }: { budgetMs?: number } = {}) {
+  // Peor caso de una búsqueda: el tiempo de espera de los proveedores más el guardado.
+  const deadline = Date.now() + budgetMs - (PROVIDER_TIMEOUT_MS + 1_000);
   const [posts, phones, detected, searches] = await Promise.all([
     db().list("posts"),
     db().list("phones"),
@@ -169,8 +174,12 @@ export async function autoPropose(limit = 8) {
     ...phones.filter((p) => imageState(p.image) !== "approved" && !recent(searchId("phone", p.id))).map((p) => ["phone", p.id] as [ImageTargetType, string]),
   ].slice(0, limit);
 
-  const summary = { searched: 0, proposed: 0, errors: [] as string[] };
-  for (const [type, id] of queue) {
+  const summary = { searched: 0, proposed: 0, pending: 0, errors: [] as string[] };
+  for (const [i, [type, id]] of queue.entries()) {
+    if (Date.now() > deadline) {
+      summary.pending = queue.length - i;
+      break;
+    }
     const s = await searchImages(type, id, { origin: "auto" });
     if (!s) continue;
     summary.searched++;

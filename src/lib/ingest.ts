@@ -154,11 +154,17 @@ export async function ingest(onlySourceId?: string): Promise<IngestReport> {
   const recent = existing.filter((d) => new Date(d.detectedAt).getTime() > recentWindow && !d.duplicateOf);
   const report: IngestReport = { sources: [], added: 0 };
 
-  for (const source of sources) {
+  // Los feeds se descargan en paralelo: en serie, varias fuentes lentas superan el límite de las funciones.
+  const feeds = await Promise.allSettled(sources.map((s) => fetchFeed(s.feedUrl)));
+
+  for (const [i, source] of sources.entries()) {
     const row = { id: source.id, name: source.name, added: 0, duplicates: 0 } as IngestReport["sources"][number];
     let updated: NewsSource = { ...source, lastFetchedAt: new Date().toISOString() };
     try {
-      const items = parseFeed(await fetchFeed(source.feedUrl)).filter((i) => i.title && /^https?:\/\//.test(i.url)).slice(0, 50);
+      const feed = feeds[i];
+      if (feed.status === "rejected") throw feed.reason;
+      const items = parseFeed(feed.value).filter((i) => i.title && /^https?:\/\//.test(i.url)).slice(0, 50);
+      const toSave: DetectedItem[] = [];
       for (const it of items) {
         const normalizedUrl = normalizeUrl(it.url);
         if (knownUrls.has(normalizedUrl)) continue; // ya detectado
@@ -188,13 +194,14 @@ export async function ingest(onlySourceId?: string): Promise<IngestReport> {
           status: "new",
           feedImage: it.image,
         };
-        await db().put("detected", item);
+        toSave.push(item);
         if (item.duplicateOf) row.duplicates++;
         else {
           row.added++;
           recent.push(item);
         }
       }
+      await Promise.all(toSave.map((item) => db().put("detected", item)));
       updated = { ...updated, lastError: undefined, lastItemCount: items.length };
     } catch (e) {
       row.error = (e as Error).message;

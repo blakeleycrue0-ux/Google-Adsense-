@@ -16,9 +16,10 @@ export async function runIngest(_: ActionResult, form: FormData): Promise<Action
   const sourceId = String(form.get("sourceId") ?? "") || undefined;
   const active = (await db().list("sources")).filter((s) => (sourceId ? s.id === sourceId : s.active));
   if (!active.length) return { ok: false, message: "No hay fuentes activas. Actívalas en «Fuentes»." };
+  const started = Date.now();
   const r = await ingest(sourceId);
-  // Propuestas de imagen para lo detectado (limitado para respetar las cuotas de los bancos).
-  const images = r.added ? await autoPropose(Math.min(r.added, 10)) : null;
+  // Propuestas de imagen para lo detectado (limitado para respetar las cuotas y el límite de 30 s).
+  const images = r.added ? await autoPropose(Math.min(r.added, 10), { budgetMs: 24_000 - (Date.now() - started) }) : null;
   revalidatePath("/admin", "layout");
   const errors = r.sources.filter((s) => s.error);
   return {

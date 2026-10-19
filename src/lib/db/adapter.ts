@@ -1,12 +1,13 @@
 import type { CollectionName, Collections, Settings } from "@/lib/types";
 
 /**
- * Contrato común de almacenamiento. Existen dos implementaciones:
+ * Contrato común de almacenamiento. Implementaciones:
  * - `file`: ficheros JSON en disco (desarrollo, demo y servidores con disco persistente).
- * - `supabase`: Postgres + Storage de Supabase (producción / serverless).
+ * - `netlify-blobs`: Netlify Blobs (despliegues en Netlify, sin servicios externos).
+ * - `supabase`: Postgres + Storage de Supabase (producción en cualquier plataforma).
  */
 export interface DataAdapter {
-  readonly kind: "file" | "supabase";
+  readonly kind: "file" | "netlify-blobs" | "supabase";
   list<K extends CollectionName>(collection: K): Promise<Collections[K][]>;
   get<K extends CollectionName>(collection: K, id: string): Promise<Collections[K] | null>;
   put<K extends CollectionName>(collection: K, doc: Collections[K]): Promise<void>;
@@ -18,4 +19,6 @@ export interface DataAdapter {
   counters(prefix: string): Promise<Record<string, number>>;
   uploadFile(path: string, data: Buffer, mime: string): Promise<string>;
   deleteFile(path: string): Promise<void>;
+  /** Lectura de un archivo subido (adaptadores que no exponen URL pública propia). */
+  readUpload?(path: string): Promise<{ data: Uint8Array<ArrayBuffer>; mime: string } | null>;
 }

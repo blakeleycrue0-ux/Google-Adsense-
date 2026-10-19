@@ -3,10 +3,12 @@ import { isUsable, LICENSES, licenseFromText } from "./licenses";
 import type { ImageCandidate, ImageProviderId } from "@/lib/types";
 
 /**
- * Proveedores de imágenes con licencias compatibles. Cada uno devuelve
- * candidatas con su licencia, autoría y página de origen. Ninguno se usa
- * si no está configurado; los errores (sin clave, red bloqueada, límite de
- * uso) se devuelven tal cual para mostrarlos en el panel.
+ * Proveedores de fotografías con licencias compatibles:
+ * - Openverse (principal, sin clave): agrega Wikimedia Commons, Flickr y otros
+ *   repositorios con licencias abiertas. Solo se piden licencias que permiten
+ *   uso comercial y modificación.
+ * - Pexels (opcional, con clave).
+ * Las claves se leen solo en el servidor; nunca llegan al navegador.
  */
 
 export interface ProviderInfo {
@@ -18,49 +20,38 @@ export interface ProviderInfo {
   notes: string;
 }
 
+const env = (k: string) => process.env[k]?.trim() || "";
+
 export function providerInfo(): ProviderInfo[] {
   return [
-    {
-      id: "wikimedia",
-      name: "Wikimedia Commons",
-      configured: true,
-      docs: "https://commons.wikimedia.org/wiki/Commons:Reusing_content_outside_Wikimedia",
-      notes: "Sin clave. Solo licencias libres; exige atribución en CC BY/BY-SA.",
-    },
     {
       id: "openverse",
       name: "Openverse",
       configured: true,
-      needs: "OPENVERSE_TOKEN (opcional, más cuota)",
+      needs: env("OPENVERSE_CLIENT_ID") ? undefined : "OPENVERSE_CLIENT_ID y OPENVERSE_CLIENT_SECRET (opcional, más cuota)",
       docs: "https://api.openverse.org/v1/",
-      notes: "Sin clave. Se filtran licencias que permiten uso comercial y modificación.",
+      notes: "Sin clave. Fotografías de Wikimedia Commons, Flickr y otros repositorios con licencia que permite uso comercial.",
     },
     {
       id: "pexels",
       name: "Pexels",
-      configured: Boolean(process.env.PEXELS_API_KEY),
+      configured: Boolean(env("PEXELS_API_KEY")),
       needs: "PEXELS_API_KEY",
       docs: "https://www.pexels.com/api/",
-      notes: "Fotografías genéricas de calidad. Se muestra autoría y enlace a Pexels.",
-    },
-    {
-      id: "unsplash",
-      name: "Unsplash",
-      configured: Boolean(process.env.UNSPLASH_ACCESS_KEY),
-      needs: "UNSPLASH_ACCESS_KEY",
-      docs: "https://unsplash.com/documentation",
-      notes: "Las imágenes se sirven desde su CDN (obligatorio) y se notifica cada descarga.",
+      notes: "Opcional. Fotografía genérica de calidad para noticias; se muestra autoría y enlace a Pexels.",
     },
   ];
 }
 
 export function userAgent() {
-  const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  const contact = process.env.IMAGE_CONTACT_EMAIL || "sin-contacto";
-  return `VoltioImageBot/1.0 (${site}; ${contact})`;
+  const site = env("NEXT_PUBLIC_SITE_URL") || env("URL") || "http://localhost:3000";
+  return `VoltioImageBot/1.0 (+${site})`;
 }
 
 export class ProviderError extends Error {}
+
+/** Tiempo máximo de espera de cada proveedor. */
+export const PROVIDER_TIMEOUT_MS = 10_000;
 
 async function getJson<T>(url: string, init: RequestInit = {}): Promise<T> {
   let res: Response;
@@ -68,7 +59,7 @@ async function getJson<T>(url: string, init: RequestInit = {}): Promise<T> {
     res = await fetch(url, {
       ...init,
       headers: { "User-Agent": userAgent(), Accept: "application/json", ...init.headers },
-      signal: AbortSignal.timeout(12_000),
+      signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
       cache: "no-store",
     });
   } catch (e) {
@@ -80,20 +71,10 @@ async function getJson<T>(url: string, init: RequestInit = {}): Promise<T> {
     );
   }
   if (res.status === 401 || res.status === 403) throw new ProviderError(`Acceso denegado (HTTP ${res.status}): revisa la clave o la red`);
-  if (res.status === 429) throw new ProviderError("Límite de uso alcanzado (HTTP 429)");
+  if (res.status === 429) throw new ProviderError("Límite de uso alcanzado (HTTP 429). Configura las credenciales de Openverse o espera unos minutos.");
   if (!res.ok) throw new ProviderError(`HTTP ${res.status}`);
   return (await res.json()) as T;
 }
-
-const stripHtml = (s?: string) =>
-  (s ?? "")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&#0?39;/g, "'")
-    .replace(/\s+/g, " ")
-    .trim();
 
 type Raw = Omit<ImageCandidate, "key" | "score" | "reasons" | "usable" | "blockedReason">;
 
@@ -107,76 +88,6 @@ function finalize(raw: Raw): ImageCandidate {
     score: 0,
     reasons: [],
   };
-}
-
-// ── Wikimedia Commons ─────────────────────────────────────────
-
-interface CommonsResponse {
-  query?: {
-    pages?: Record<
-      string,
-      {
-        pageid: number;
-        title: string;
-        imageinfo?: {
-          url: string;
-          thumburl?: string;
-          width: number;
-          height: number;
-          mime: string;
-          descriptionurl: string;
-          extmetadata?: Record<string, { value?: string }>;
-        }[];
-      }
-    >;
-  };
-}
-
-export function parseCommons(data: CommonsResponse): ImageCandidate[] {
-  const pages = Object.values(data.query?.pages ?? {});
-  return pages.flatMap((p) => {
-    const info = p.imageinfo?.[0];
-    if (!info || !/^image\/(jpeg|png|webp)$/.test(info.mime)) return [];
-    const md = info.extmetadata ?? {};
-    const v = (k: string) => md[k]?.value;
-    const { code, name } = licenseFromText(v("LicenseShortName") ?? v("License"));
-    const author = stripHtml(v("Artist")) || stripHtml(v("Credit")) || undefined;
-    const title = p.title.replace(/^File:/, "").replace(/\.[a-z0-9]+$/i, "").replace(/_/g, " ");
-    return [
-      finalize({
-        provider: "wikimedia",
-        externalId: String(p.pageid),
-        title,
-        description: stripHtml(v("ImageDescription")).slice(0, 400) || undefined,
-        previewUrl: info.thumburl ?? info.url,
-        fullUrl: info.url,
-        width: info.width,
-        height: info.height,
-        license: code,
-        licenseName: name,
-        licenseUrl: v("LicenseUrl"),
-        author: author?.slice(0, 160),
-        sourceUrl: info.descriptionurl,
-        permissionNote: v("Restrictions") ? `Restricciones adicionales: ${stripHtml(v("Restrictions"))}` : undefined,
-      }),
-    ];
-  });
-}
-
-async function searchCommons(query: string, perPage: number) {
-  const params = new URLSearchParams({
-    action: "query",
-    format: "json",
-    generator: "search",
-    gsrnamespace: "6",
-    gsrsearch: `${query} filetype:bitmap`,
-    gsrlimit: String(perPage),
-    prop: "imageinfo",
-    iiprop: "url|size|mime|extmetadata",
-    iiurlwidth: "640",
-    origin: "*",
-  });
-  return parseCommons(await getJson<CommonsResponse>(`https://commons.wikimedia.org/w/api.php?${params}`));
 }
 
 // ── Openverse ─────────────────────────────────────────────────
@@ -200,9 +111,12 @@ interface OpenverseResponse {
   }[];
 }
 
+const SOURCE_NAMES: Record<string, string> = { wikimedia: "Wikimedia Commons", flickr: "Flickr" };
+
 export function parseOpenverse(data: OpenverseResponse): ImageCandidate[] {
   return (data.results ?? []).map((r) => {
     const { code, name } = licenseFromText(r.license, r.license_version);
+    const source = r.source ? (SOURCE_NAMES[r.source] ?? r.source) : undefined;
     return finalize({
       provider: "openverse",
       externalId: r.id,
@@ -218,14 +132,44 @@ export function parseOpenverse(data: OpenverseResponse): ImageCandidate[] {
       author: r.creator,
       authorUrl: r.creator_url,
       sourceUrl: r.foreign_landing_url,
-      permissionNote: r.source ? `Origen: ${r.source}` : undefined,
+      permissionNote: source ? `Publicada en ${source}` : undefined,
     });
   });
 }
 
-async function searchOpenverse(query: string, perPage: number) {
-  const params = new URLSearchParams({ q: query, page_size: String(perPage), license_type: "commercial,modification", mature: "false" });
-  const token = process.env.OPENVERSE_TOKEN;
+/** Token de aplicación de Openverse (opcional): amplía la cuota de búsquedas. */
+let ovToken: { value: string; expires: number } | null = null;
+
+async function openverseToken(): Promise<string | null> {
+  const id = env("OPENVERSE_CLIENT_ID");
+  const secret = env("OPENVERSE_CLIENT_SECRET");
+  if (!id || !secret) return null;
+  if (ovToken && ovToken.expires > Date.now() + 60_000) return ovToken.value;
+  const res = await fetch("https://api.openverse.org/v1/auth_tokens/token/", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": userAgent() },
+    body: new URLSearchParams({ grant_type: "client_credentials", client_id: id, client_secret: secret }),
+    signal: AbortSignal.timeout(10_000),
+  }).catch(() => null);
+  if (!res?.ok) return null; // Se continúa de forma anónima.
+  const data = (await res.json()) as { access_token: string; expires_in: number };
+  ovToken = { value: data.access_token, expires: Date.now() + data.expires_in * 1000 };
+  return ovToken.value;
+}
+
+async function searchOpenverse(query: string, perPage: number, kind: "cover" | "phone") {
+  const params = new URLSearchParams({
+    q: query,
+    page_size: String(perPage),
+    license_type: "commercial,modification",
+    category: "photograph",
+    mature: "false",
+  });
+  if (kind === "cover") {
+    params.set("aspect_ratio", "wide");
+    params.set("size", "large");
+  }
+  const token = await openverseToken();
   return parseOpenverse(
     await getJson<OpenverseResponse>(`https://api.openverse.org/v1/images/?${params}`, token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
   );
@@ -267,84 +211,25 @@ export function parsePexels(data: PexelsResponse): ImageCandidate[] {
   );
 }
 
-async function searchPexels(query: string, perPage: number, orientation: "landscape" | "portrait") {
-  const key = process.env.PEXELS_API_KEY;
+async function searchPexels(query: string, perPage: number, kind: "cover" | "phone") {
+  const key = env("PEXELS_API_KEY");
   if (!key) throw new ProviderError("No configurado: falta PEXELS_API_KEY");
-  const params = new URLSearchParams({ query, per_page: String(perPage), orientation });
+  const params = new URLSearchParams({ query, per_page: String(perPage), orientation: kind === "cover" ? "landscape" : "portrait" });
   return parsePexels(await getJson<PexelsResponse>(`https://api.pexels.com/v1/search?${params}`, { headers: { Authorization: key } }));
-}
-
-// ── Unsplash ──────────────────────────────────────────────────
-
-interface UnsplashResponse {
-  results?: {
-    id: string;
-    width: number;
-    height: number;
-    description?: string | null;
-    alt_description?: string | null;
-    urls: { raw: string; small: string; regular: string };
-    links: { html: string; download_location: string };
-    user: { name: string; links: { html: string } };
-  }[];
-}
-
-export function parseUnsplash(data: UnsplashResponse): ImageCandidate[] {
-  const ref = "utm_source=voltio&utm_medium=referral";
-  return (data.results ?? []).map((r) =>
-    finalize({
-      provider: "unsplash",
-      externalId: r.id,
-      title: r.alt_description || r.description || "Fotografía de Unsplash",
-      description: r.description ?? undefined,
-      previewUrl: r.urls.small,
-      fullUrl: r.urls.raw,
-      width: r.width,
-      height: r.height,
-      license: "unsplash",
-      licenseName: LICENSES.unsplash.name,
-      licenseUrl: LICENSES.unsplash.url,
-      author: r.user.name,
-      authorUrl: `${r.user.links.html}?${ref}`,
-      sourceUrl: `${r.links.html}?${ref}`,
-      hotlink: true,
-      trackUrl: r.links.download_location,
-    }),
-  );
-}
-
-async function searchUnsplash(query: string, perPage: number, orientation: "landscape" | "portrait") {
-  const key = process.env.UNSPLASH_ACCESS_KEY;
-  if (!key) throw new ProviderError("No configurado: falta UNSPLASH_ACCESS_KEY");
-  const params = new URLSearchParams({ query, per_page: String(perPage), orientation, content_filter: "high" });
-  return parseUnsplash(
-    await getJson<UnsplashResponse>(`https://api.unsplash.com/search/photos?${params}`, { headers: { Authorization: `Client-ID ${key}`, "Accept-Version": "v1" } }),
-  );
-}
-
-/** Notifica a Unsplash el uso de una foto (requisito de sus condiciones de API). */
-export async function trackUnsplashDownload(trackUrl: string) {
-  const key = process.env.UNSPLASH_ACCESS_KEY;
-  if (!key || !trackUrl.startsWith("https://api.unsplash.com/")) return;
-  await fetch(trackUrl, { headers: { Authorization: `Client-ID ${key}` }, signal: AbortSignal.timeout(8000) }).catch(() => undefined);
 }
 
 export async function searchProvider(
   id: ImageProviderId,
   query: string,
-  opts: { perPage?: number; orientation?: "landscape" | "portrait" } = {},
+  opts: { perPage?: number; kind?: "cover" | "phone" } = {},
 ): Promise<ImageCandidate[]> {
-  const perPage = opts.perPage ?? 15;
-  const orientation = opts.orientation ?? "landscape";
+  const perPage = opts.perPage ?? 20;
+  const kind = opts.kind ?? "cover";
   switch (id) {
-    case "wikimedia":
-      return searchCommons(query, perPage);
     case "openverse":
-      return searchOpenverse(query, perPage);
+      return searchOpenverse(query, perPage, kind);
     case "pexels":
-      return searchPexels(query, perPage, orientation);
-    case "unsplash":
-      return searchUnsplash(query, perPage, orientation);
+      return searchPexels(query, perPage, kind);
     default:
       throw new ProviderError("Proveedor sin búsqueda");
   }

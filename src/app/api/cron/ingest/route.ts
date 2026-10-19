@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cronAuthorized } from "@/lib/cron-auth";
 import { ingest } from "@/lib/ingest";
 import { autoPropose } from "@/lib/images/search";
 
@@ -10,12 +11,17 @@ export const maxDuration = 60;
  * (p. ej. desde Vercel Cron o un cron del servidor cada 15 minutos).
  */
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!cronAuthorized(req, "ingest")) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
+  const started = Date.now();
   const report = await ingest();
+  const rssMs = Date.now() - started;
   // Propone imágenes para lo detectado y para contenidos pendientes. Nunca aprueba ni publica.
-  const images = await autoPropose(10);
+  // Se ajusta al tiempo que queda antes del límite de 30 s de Netlify.
+  const images = await autoPropose(10, { budgetMs: 24_000 - rssMs });
+  console.warn(
+    `[voltio-ingest] rss: ${report.added} nuevas en ${rssMs}ms · imágenes: ${images.proposed} propuestas de ${images.searched} (quedan ${images.pending}) · total ${Date.now() - started}ms`,
+  );
   return NextResponse.json({ ...report, images });
 }
