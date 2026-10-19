@@ -1,4 +1,3 @@
-import { getStore } from "@netlify/blobs";
 import { NextResponse } from "next/server";
 import { cronAuthorized } from "@/lib/cron-auth";
 import { db } from "@/lib/db";
@@ -39,7 +38,7 @@ export async function GET(req: Request) {
         }
       }),
   );
-  // Lecturas individuales de Blobs (con límite de 5 s): consistencia fuerte frente a eventual.
+  // Lectura real de una colección (con límite de 5 s).
   let reads = "";
   if (storage.kind === "netlify-blobs") {
     const probe = async (label: string, fn: () => Promise<unknown>) => {
@@ -52,8 +51,6 @@ export async function GET(req: Request) {
     };
     reads = (
       await Promise.all([
-        probe("get-fuerte", () => getStore({ name: "voltio-data", consistency: "strong" }).get("seeded/sources")),
-        probe("get-eventual", () => getStore({ name: "voltio-data" }).get("seeded/sources")),
         probe("list-fuentes", () => db().list("sources")),
       ])
     ).join(" ");

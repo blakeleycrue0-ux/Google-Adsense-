@@ -17,8 +17,15 @@ import { seedCollection } from "@/data/seed";
 const DATA = "voltio-data";
 const MEDIA = "voltio-media";
 
-const data = () => getStore({ name: DATA, consistency: "strong" });
-const media = () => getStore({ name: MEDIA, consistency: "strong" });
+/**
+ * Next.js intercepta fetch y pasa los GET por su caché de datos, que en Netlify
+ * se guarda a su vez en Blobs: las lecturas se quedaban esperando. Con
+ * «no-store» las peticiones del cliente de Blobs van directas.
+ */
+const directFetch: typeof fetch = (input, init) => fetch(input, { ...init, cache: "no-store" });
+
+const data = () => getStore({ name: DATA, consistency: "strong", fetch: directFetch });
+const media = () => getStore({ name: MEDIA, consistency: "strong", fetch: directFetch });
 
 /**
  * En producción se ha visto que las lecturas con consistencia fuerte pueden no
@@ -36,12 +43,12 @@ const TIMEOUT = Symbol("timeout");
 
 async function read<T>(name: string, op: (store: ReturnType<typeof getStore>) => Promise<T>): Promise<T> {
   if (strongReads) {
-    const r = await withTimeout(op(getStore({ name, consistency: "strong" })), READ_TIMEOUT_MS);
+    const r = await withTimeout(op(getStore({ name, consistency: "strong", fetch: directFetch })), READ_TIMEOUT_MS);
     if (r !== TIMEOUT) return r;
     strongReads = false;
     console.warn("[voltio-blobs] lectura fuerte sin respuesta en 3 s: se usan lecturas eventuales");
   }
-  const r = await withTimeout(op(getStore({ name })), READ_TIMEOUT_MS * 2);
+  const r = await withTimeout(op(getStore({ name, fetch: directFetch })), READ_TIMEOUT_MS * 2);
   if (r === TIMEOUT) throw new Error("Netlify Blobs no responde");
   return r;
 }
