@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Ad } from "@/components/ads/Ad";
-import { ArticleCard, EmptyState, SectionTitle } from "@/components/news/ArticleCard";
+import { ArticleCard, EmptyState, LeadStory, SectionTitle } from "@/components/news/ArticleCard";
 import { getPublished } from "@/lib/content";
 import { organizationLd } from "@/lib/seo";
 import { getSettings } from "@/lib/settings";
@@ -28,10 +28,10 @@ export default async function HomePage() {
   const lead = all.slice(0, 4).find((a) => a.photo) ?? all[0];
   const rest = all.filter((a) => a !== lead);
   const side = rest.slice(0, 4);
-  const grid = rest.slice(4, 10);
+  const grid = rest.slice(4, 13);
   const shown = new Set([lead, ...side, ...grid].map((a) => a.id));
   const byIsland = ISLANDS.filter((i) => i.id !== "baleares")
-    .map((i) => ({ ...i, items: all.filter((a) => a.island === i.id && !shown.has(a.id)).slice(0, 3) }))
+    .map((i) => ({ ...i, items: all.filter((a) => a.island === i.id && !shown.has(a.id)).slice(0, 4) }))
     .filter((g) => g.items.length);
 
   return (
@@ -41,23 +41,28 @@ export default async function HomePage() {
         {s.siteName}: {s.tagline}
       </h1>
 
-      <section className="grid gap-8 lg:grid-cols-12">
+      <section className="grid gap-6 lg:grid-cols-12 lg:gap-10">
         <div className="lg:col-span-8">
-          <ArticleCard article={lead} variant="lead" priority />
+          <LeadStory article={lead} />
         </div>
-        <div className="space-y-6 lg:col-span-4 lg:border-l lg:border-line lg:pl-8">
-          {side.map((a) => (
-            <ArticleCard key={a.id} article={a} variant="row" />
-          ))}
-        </div>
+        {side.length > 0 && (
+          <div className="border-t border-line pt-5 lg:col-span-4 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0">
+            <p className="kicker mb-1 hidden text-muted lg:block">Lo último</p>
+            <div className="divide-y divide-line [&>*]:py-4 [&>*:first-child]:pt-0 lg:[&>*:first-child]:pt-3">
+              {side.map((a) => (
+                <ArticleCard key={a.id} article={a} variant="row" />
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
-      <Ad slot="home" className="my-10" />
+      <Ad slot="home" className="my-8" />
 
       {grid.length > 0 && (
-        <section className="mt-12">
-          <SectionTitle>Más noticias</SectionTitle>
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <section className="mt-8">
+          <SectionTitle href="/ultima-hora">Más noticias</SectionTitle>
+          <div className="grid divide-y divide-line sm:grid-cols-2 sm:gap-x-8 sm:gap-y-10 sm:divide-y-0 lg:grid-cols-3 [&>*]:py-4 sm:[&>*]:py-0 [&>*:first-child]:pt-0">
             {grid.map((a) => (
               <ArticleCard key={a.id} article={a} />
             ))}
@@ -66,11 +71,11 @@ export default async function HomePage() {
       )}
 
       {byIsland.length > 0 && (
-        <div className="mt-12 grid gap-10 md:grid-cols-2">
+        <div className="mt-12 grid gap-12 md:grid-cols-2 md:gap-x-10">
           {byIsland.map((g) => (
             <section key={g.id}>
               <SectionTitle href={`/isla/${g.id}`}>{g.name}</SectionTitle>
-              <div className="space-y-5">
+              <div className="divide-y divide-line [&>*]:py-4 [&>*:first-child]:pt-0">
                 {g.items.map((a) => (
                   <ArticleCard key={a.id} article={a} variant="row" />
                 ))}

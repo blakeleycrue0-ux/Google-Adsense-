@@ -16,7 +16,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       )}
       <Header siteName={s.siteName} tagline={s.tagline} />
       <BreakingBar items={breaking} />
-      <main className="container-x py-8">{children}</main>
+      <main className="container-x py-5 sm:py-8">{children}</main>
       <Footer siteName={s.siteName} tagline={s.tagline} />
     </>
   );

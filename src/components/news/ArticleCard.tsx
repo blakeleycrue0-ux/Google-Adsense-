@@ -4,80 +4,69 @@ import { islandName, sectionName } from "@/lib/site";
 import type { Article } from "@/lib/types";
 import { PhotoImage } from "./PhotoFigure";
 
-export function Kicker({ article }: { article: Article }) {
+/** Antetítulo en una sola línea: «ÚLTIMA HORA  MALLORCA · SUCESOS». */
+export function Kicker({ article, light }: { article: Article; light?: boolean }) {
   return (
-    <p className="kicker flex flex-wrap items-center gap-x-2 text-sea">
-      {article.breaking && <span className="rounded-sm bg-live px-1.5 py-0.5 text-white">Última hora</span>}
-      <span>{islandName(article.island)}</span>
-      <span className="text-muted">·</span>
-      <span className="text-muted">{sectionName(article.section)}</span>
+    <p className={`kicker flex min-w-0 items-center gap-2 ${light ? "text-white/70" : "text-muted"}`}>
+      {article.breaking && <span className={`shrink-0 rounded-sm px-1.5 py-0.5 ${light ? "bg-white text-ink" : "bg-ink text-white"}`}>Última hora</span>}
+      <span className="truncate">
+        <span className={light ? "text-white" : "text-ink"}>{islandName(article.island)}</span> · {sectionName(article.section)}
+      </span>
     </p>
   );
 }
 
-type Variant = "lead" | "card" | "row" | "compact";
+const Time = ({ article }: { article: Article }) => (
+  <time dateTime={article.publishedAt} className="block text-xs text-muted">
+    {formatSmart(article.publishedAt!)}
+  </time>
+);
 
-/**
- * Noticia en listados. Variantes: principal de portada, tarjeta con foto,
- * fila con miniatura y titular compacto sin foto.
- */
-export function ArticleCard({ article, variant = "card", priority }: { article: Article; variant?: Variant; priority?: boolean }) {
-  const href = `/noticia/${article.slug}`;
-  const time = <time dateTime={article.publishedAt} className="text-xs text-muted">{formatSmart(article.publishedAt!)}</time>;
-
-  if (variant === "lead") {
-    return (
-      <article className="group">
-        <Link href={href} className="block">
-          <PhotoImage photo={article.photo} sizes="(min-width: 1024px) 700px, 100vw" priority={priority} className="rounded-md" />
-          <div className="mt-4 space-y-2">
-            <Kicker article={article} />
-            <h2 className="headline text-3xl group-hover:text-sea sm:text-4xl">{article.title}</h2>
-            <p className="text-lg text-ink-2">{article.summary}</p>
-            {time}
-          </div>
-        </Link>
-      </article>
-    );
-  }
-
-  if (variant === "row") {
-    return (
-      <article className="group">
-        <Link href={href} className="flex gap-4">
-          <PhotoImage photo={article.photo} sizes="160px" className="w-28 shrink-0 rounded sm:w-40" />
-          <div className="min-w-0 space-y-1">
-            <Kicker article={article} />
-            <h3 className="headline text-base group-hover:text-sea sm:text-lg">{article.title}</h3>
-            <p className="hidden text-sm text-ink-2 sm:line-clamp-2">{article.summary}</p>
-            {time}
-          </div>
-        </Link>
-      </article>
-    );
-  }
-
-  if (variant === "compact") {
-    return (
-      <article className="group">
-        <Link href={href} className="block space-y-1">
-          <Kicker article={article} />
-          <h3 className="headline text-base group-hover:text-sea">{article.title}</h3>
-          {time}
-        </Link>
-      </article>
-    );
-  }
-
+/** Noticia principal: foto a todo el ancho en el móvil y titular grande. */
+export function LeadStory({ article }: { article: Article }) {
   return (
     <article className="group">
-      <Link href={href} className="block">
-        <PhotoImage photo={article.photo} sizes="(min-width: 1024px) 360px, (min-width: 640px) 50vw, 100vw" className="rounded-md" />
-        <div className="mt-3 space-y-1.5">
+      <Link href={`/noticia/${article.slug}`} className="block">
+        {article.photo && (
+          <PhotoImage photo={article.photo} sizes="(min-width: 1024px) 720px, 100vw" priority className="-mx-4 mb-4 sm:mx-0 sm:rounded-sm" />
+        )}
+        <div className="space-y-2.5">
           <Kicker article={article} />
-          <h3 className="headline text-lg group-hover:text-sea">{article.title}</h3>
-          <p className="line-clamp-2 text-sm text-ink-2">{article.summary}</p>
-          {time}
+          <h2 className="headline text-[1.85rem] group-hover:underline group-hover:decoration-2 group-hover:underline-offset-4 sm:text-[2.6rem]">
+            {article.title}
+          </h2>
+          <p className="text-[1.05rem] leading-relaxed text-ink-2 sm:text-lg">{article.summary}</p>
+          <Time article={article} />
+        </div>
+      </Link>
+    </article>
+  );
+}
+
+/**
+ * Noticia en listados. En el móvil: texto a la izquierda y miniatura a la
+ * derecha. Desde tableta, en «card», foto arriba y texto debajo.
+ */
+export function ArticleCard({ article, variant = "card" }: { article: Article; variant?: "card" | "row" }) {
+  const card = variant === "card";
+  return (
+    <article className="group">
+      <Link href={`/noticia/${article.slug}`} className={`flex gap-4 ${card ? "sm:flex-col sm:gap-3" : ""}`}>
+        {article.photo && (
+          <PhotoImage
+            photo={article.photo}
+            sizes={card ? "(min-width: 1024px) 360px, (min-width: 640px) 50vw, 112px" : "128px"}
+            aspect={card ? "aspect-square sm:aspect-[3/2]" : "aspect-square sm:aspect-[4/3]"}
+            className={`order-2 w-24 shrink-0 rounded-sm sm:w-32 ${card ? "sm:order-1 sm:w-full" : ""}`}
+          />
+        )}
+        <div className={`order-1 min-w-0 flex-1 space-y-1.5 ${card ? "sm:order-2" : ""}`}>
+          <Kicker article={article} />
+          <h3 className={`headline text-[1.08rem] group-hover:underline group-hover:underline-offset-2 ${card ? "sm:text-xl" : "sm:text-lg"}`}>
+            {article.title}
+          </h3>
+          <p className={`hidden text-sm leading-relaxed text-ink-2 ${card ? "sm:line-clamp-3" : ""}`}>{article.summary}</p>
+          <Time article={article} />
         </div>
       </Link>
     </article>
@@ -86,11 +75,11 @@ export function ArticleCard({ article, variant = "card", priority }: { article: 
 
 export function SectionTitle({ children, href }: { children: React.ReactNode; href?: string }) {
   return (
-    <div className="mb-5 flex items-end justify-between border-t-2 border-ink pt-2">
-      <h2 className="text-xl font-bold tracking-tight">{children}</h2>
+    <div className="mb-4 flex items-baseline justify-between border-t-[3px] border-ink pt-2.5">
+      <h2 className="text-lg font-extrabold uppercase tracking-wide">{children}</h2>
       {href && (
-        <Link href={href} className="text-sm font-medium text-sea hover:underline">
-          Ver más →
+        <Link href={href} className="text-sm text-muted hover:text-ink">
+          Ver todo →
         </Link>
       )}
     </div>
@@ -98,5 +87,5 @@ export function SectionTitle({ children, href }: { children: React.ReactNode; hr
 }
 
 export function EmptyState({ children }: { children: React.ReactNode }) {
-  return <p className="rounded-md border border-dashed border-line bg-surface px-6 py-12 text-center text-muted">{children}</p>;
+  return <p className="border-y border-line px-6 py-14 text-center text-muted">{children}</p>;
 }

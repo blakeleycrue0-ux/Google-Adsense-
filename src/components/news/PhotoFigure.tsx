@@ -2,29 +2,34 @@ import Image from "next/image";
 import { photoCredit } from "@/lib/photos";
 import type { Photo } from "@/lib/types";
 
-/** Foto con su crédito. Sin foto, un bloque neutro (nunca una imagen inventada). */
-export function PhotoImage({ photo, sizes, priority, className = "" }: { photo: Photo | null; sizes: string; priority?: boolean; className?: string }) {
+/** Foto recortada a un formato fijo. Quien la usa decide qué hacer si no hay foto. */
+export function PhotoImage({
+  photo,
+  sizes,
+  priority,
+  aspect = "aspect-[3/2]",
+  className = "",
+}: {
+  photo: Photo;
+  sizes: string;
+  priority?: boolean;
+  aspect?: string;
+  className?: string;
+}) {
   return (
-    <div className={`relative aspect-[3/2] overflow-hidden bg-surface ${className}`}>
-      {photo ? (
-        <Image src={photo.url} alt={photo.alt} fill sizes={sizes} priority={priority} className="object-cover" />
-      ) : (
-        <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-sea/10 to-sea/25">
-          <svg viewBox="0 0 64 24" className="w-1/4 text-sea/40" aria-hidden>
-            <path d="M2 16c6-5 12-5 18 0s12 5 18 0 12-5 18 0" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
-          </svg>
-        </div>
-      )}
+    <div className={`relative overflow-hidden bg-surface ${aspect} ${className}`}>
+      <Image src={photo.url} alt={photo.alt} fill sizes={sizes} priority={priority} className="object-cover" />
     </div>
   );
 }
 
+/** Foto de la noticia con pie y crédito. En el móvil ocupa todo el ancho. */
 export function PhotoFigure({ photo, priority }: { photo: Photo; priority?: boolean }) {
   return (
-    <figure>
-      <PhotoImage photo={photo} sizes="(min-width: 1024px) 760px, 100vw" priority={priority} className="rounded-md" />
-      <figcaption className="mt-2 flex flex-wrap gap-x-2 text-sm text-muted">
-        {photo.alt && <span>{photo.alt}.</span>}
+    <figure className="-mx-4 sm:mx-0">
+      <PhotoImage photo={photo} sizes="(min-width: 1024px) 760px, 100vw" priority={priority} className="sm:rounded-sm" />
+      <figcaption className="mx-4 mt-2 border-b border-line pb-3 text-[13px] leading-snug text-muted sm:mx-0">
+        {photo.alt && <span className="text-ink-2">{photo.alt}. </span>}
         {photo.sourceUrl ? (
           <a href={photo.sourceUrl} target="_blank" rel="noopener noreferrer nofollow" className="underline underline-offset-2">
             {photoCredit(photo)}
