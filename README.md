@@ -30,6 +30,12 @@ Diario digital de noticias de Mallorca, Menorca, Ibiza y Formentera, preparado p
    - `ANTHROPIC_API_KEY` (opcional): activa el asistente de IA.
 4. Despliega la web, entra en `https://tu-web/admin` y completa **Ajustes**: nombre, titular, NIF, domicilio y correo.
 
+## Acceso al panel
+
+- Dirección: `https://voltio0.netlify.app/admin` (o `tu-dominio/admin` cuando lo tengas).
+- La primera vez se entra con `ADMIN_EMAIL` y `ADMIN_PASSWORD` de Netlify; la cuenta queda creada.
+- Después cambia la contraseña en **Panel → Ajustes → Cambiar contraseña** (mínimo 10 caracteres).
+
 ## Fotos reales sin problemas de derechos
 
 | Origen | Cuándo usarlo | Crédito |
