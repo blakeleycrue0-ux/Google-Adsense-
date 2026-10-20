@@ -3,6 +3,7 @@ import { ActionForm, SubmitButton } from "@/components/admin/forms";
 import { AdminPage, Empty, Panel } from "@/components/admin/ui";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { withLibraryPhoto } from "@/lib/devices";
 import { providerInfo } from "@/lib/images/providers";
 import { bestCandidate, imageState, searchId, type ImageState } from "@/lib/images/search";
 import { formatSmart } from "@/lib/format";
@@ -16,13 +17,16 @@ const TABS: { id: ImageState | "detectadas"; label: string }[] = [
   { id: "detectadas", label: "Noticias detectadas" },
 ];
 
-type Row = { key: string; type: "post" | "phone"; id: string; title: string; kind: string; image: ImageRef; state: ImageState; search?: ImageSearch };
+type Row = { key: string; type: "post" | "phone"; id: string; title: string; kind: string; image: ImageRef; state: ImageState; search?: ImageSearch; deviceId?: string };
 
 export default async function ImagesAdmin({ searchParams }: PageProps<"/admin/imagenes">) {
   await requireUser();
   const sp = await searchParams;
   const tab = (typeof sp.vista === "string" ? sp.vista : "pending") as (typeof TABS)[number]["id"];
-  const [posts, phones, detected, searches] = await Promise.all([db().list("posts"), db().list("phones"), db().list("detected"), db().list("imageSearches")]);
+  const [posts, rawPhones, detected, searches, devices] = await Promise.all([db().list("posts"), db().list("phones"), db().list("detected"), db().list("imageSearches"), db().list("devices")]);
+  // La portada aprobada en la biblioteca de móviles cuenta como imagen de la ficha.
+  const deviceById = new Map(devices.map((d) => [d.id, d]));
+  const phones = rawPhones.map((p) => withLibraryPhoto(p, p.deviceId ? deviceById.get(p.deviceId) : undefined));
   const byId = new Map(searches.map((s) => [s.id, s]));
 
   const rows: Row[] = [
@@ -32,7 +36,7 @@ export default async function ImagesAdmin({ searchParams }: PageProps<"/admin/im
     }),
     ...phones.map((p) => {
       const search = byId.get(searchId("phone", p.id));
-      return { key: `phone:${p.id}`, type: "phone" as const, id: p.id, title: `${p.brand} ${p.model}`, kind: "Ficha de móvil", image: p.image, state: imageState(p.image, search), search };
+      return { key: `phone:${p.id}`, type: "phone" as const, id: p.id, title: `${p.brand} ${p.model}`, kind: "Ficha de móvil", image: p.image, state: imageState(p.image, search), search, deviceId: p.deviceId };
     }),
   ];
   const counts = { pending: 0, proposed: 0, approved: 0 } as Record<ImageState, number>;
@@ -54,7 +58,8 @@ export default async function ImagesAdmin({ searchParams }: PageProps<"/admin/im
           <ActionForm action={runAutoPropose}>
             <SubmitButton>Buscar propuestas ahora</SubmitButton>
           </ActionForm>
-          <Link href="/admin/medios" className="btn-secondary">Biblioteca</Link>
+          <Link href="/admin/imagenes/biblioteca" className="btn-secondary">Biblioteca de móviles</Link>
+          <Link href="/admin/medios" className="btn-secondary">Medios</Link>
         </>
       }
     >
@@ -155,7 +160,8 @@ export default async function ImagesAdmin({ searchParams }: PageProps<"/admin/im
                     {r.state === "approved" && r.image.meta && ` · ${r.image.meta.licenseName}${r.image.meta.author ? `, ${r.image.meta.author}` : ""}`}
                   </p>
                 </div>
-                <Link href={`/admin/imagenes/${r.type}/${r.id}`} className="btn-secondary btn-sm col-span-2 sm:col-span-1">
+                {/* Las fichas enlazadas con la biblioteca de móviles se gestionan allí (portada, frontal y trasera). */}
+                <Link href={r.deviceId ? `/admin/imagenes/biblioteca/${r.deviceId}` : `/admin/imagenes/${r.type}/${r.id}`} className="btn-secondary btn-sm col-span-2 sm:col-span-1">
                   {r.state === "proposed" ? "Revisar propuesta" : r.state === "approved" ? "Cambiar" : "Elegir imagen"}
                 </Link>
               </li>

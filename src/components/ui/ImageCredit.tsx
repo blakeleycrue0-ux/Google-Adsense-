@@ -2,6 +2,7 @@ import type { ImageRef } from "@/lib/types";
 
 const VIA: Record<string, string> = {
   openverse: "Openverse",
+  wikimedia: "Wikimedia Commons",
   pexels: "Pexels",
   press: "Imagen de prensa",
   feed: "Imagen de la fuente",
@@ -57,6 +58,7 @@ export function ImageCredit({ image, className = "" }: { image: ImageRef; classN
           )}
         </>
       )}
+      {m.changes && ` · ${m.changes}`}
     </span>
   );
 }

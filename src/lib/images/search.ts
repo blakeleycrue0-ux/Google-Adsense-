@@ -127,19 +127,18 @@ export async function getSearch(type: ImageTargetType, id: string) {
 export { AUTO_APPROVER };
 
 /**
- * Publica sola la mejor candidata de una búsqueda si cumple todos los
- * controles: licencia comercial verificada, coincidencia con el contenido
- * (modelo exacto en móviles) y resolución suficiente. Las noticias detectadas
- * no se publican: su imagen pasa al borrador cuando se crea.
+ * Publica sola la mejor candidata para la portada de un artículo si cumple
+ * todos los controles: licencia comercial verificada, coincidencia con el tema
+ * y resolución suficiente. Las noticias detectadas no se publican (su imagen
+ * pasa al borrador) y los móviles tampoco (biblioteca con aprobación manual).
  */
 async function autoPublish(s: ImageSearch): Promise<boolean> {
-  if (s.targetType === "detected") return false;
+  // Solo portadas de artículos: los móviles usan la biblioteca fija, con aprobación manual.
+  if (s.targetType !== "post") return false;
   const target = await loadTarget(s.targetType, s.targetId);
-  if (!target || target.type === "detected") return false;
-  const current = target.type === "post" ? target.post.cover : target.phone.image;
-  if (imageState(current) === "approved") return false;
-  const kind = s.targetType === "phone" ? "phone" : "cover";
-  const alt = target.type === "phone" ? `${target.phone.brand} ${target.phone.model}` : target.post.title;
+  if (target?.type !== "post" || imageState(target.post.cover) === "approved") return false;
+  const kind = "cover";
+  const alt = target.post.title;
   const eligible = publishable(s.candidates, kind).slice(0, 2);
   for (const c of eligible) {
     try {
@@ -169,9 +168,8 @@ export async function autoPropose(limit = 8, { budgetMs = 24_000 }: { budgetMs?:
   const deadline = started + budgetMs - (PROVIDER_TIMEOUT_MS + 4_000);
   // Líneas cortas en los registros del servidor para saber dónde se va el tiempo.
   const trace = (msg: string) => console.warn(`[voltio-propuestas] +${Date.now() - started}ms ${msg}`);
-  const [posts, phones, detected, searches] = await Promise.all([
+  const [posts, detected, searches] = await Promise.all([
     db().list("posts"),
-    db().list("phones"),
     db().list("detected"),
     db().list("imageSearches"),
   ]);
@@ -184,11 +182,10 @@ export async function autoPropose(limit = 8, { budgetMs = 24_000 }: { budgetMs?:
   const unapproved: [ImageTargetType, string][] = [
     ...detected.filter((d) => d.status === "new" && !d.duplicateOf).map((d) => ["detected", d.id] as [ImageTargetType, string]),
     ...posts.filter((p) => imageState(p.cover) !== "approved").map((p) => ["post", p.id] as [ImageTargetType, string]),
-    ...phones.filter((p) => imageState(p.image) !== "approved").map((p) => ["phone", p.id] as [ImageTargetType, string]),
   ];
   const reuse = unapproved.filter(([t, id]) => t !== "detected" && recent(searchId(t, id)));
   const queue = unapproved.filter(([t, id]) => !recent(searchId(t, id))).slice(0, limit);
-  trace(`datos leídos (${posts.length} artículos, ${phones.length} móviles, ${detected.length} detectadas, ${searches.length} búsquedas) · reutilizables ${reuse.length} · cola ${queue.length}`);
+  trace(`datos leídos (${posts.length} artículos, ${detected.length} detectadas, ${searches.length} búsquedas) · reutilizables ${reuse.length} · cola ${queue.length}`);
 
   const summary = { searched: 0, proposed: 0, published: 0, pending: 0, errors: [] as string[] };
   const work: [ImageTargetType, string, boolean][] = [...reuse.map(([t, id]) => [t, id, true] as [ImageTargetType, string, boolean]), ...queue.map(([t, id]) => [t, id, false] as [ImageTargetType, string, boolean])];

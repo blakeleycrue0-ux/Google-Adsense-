@@ -53,6 +53,7 @@ export function isUsable(code: LicenseCode) {
 export function attributionText(meta: Pick<ImageMeta, "author" | "licenseName" | "provider" | "license">) {
   const via: Record<string, string> = {
     openverse: "Openverse",
+    wikimedia: "Wikimedia Commons",
     pexels: "Pexels",
     press: "prensa",
     feed: "fuente",

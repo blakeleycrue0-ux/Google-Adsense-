@@ -10,6 +10,8 @@ import { userAgent } from "./providers";
 
 const MAX_DOWNLOAD = 25 * 1024 * 1024;
 const MASTER_WIDTH = 2400;
+/** Límite de píxeles de entrada (evita imágenes gigantes o «bombas» de descompresión). */
+const MAX_PIXELS = 80_000_000;
 export const MIN_WIDTH: Record<"cover" | "phone", number> = { cover: 1200, phone: 500 };
 
 export class ImportError extends Error {}
@@ -42,7 +44,7 @@ async function assertPublicUrl(raw: string) {
 }
 
 /** Descarga con comprobación de destino en cada redirección, tipo y tamaño. */
-async function safeDownload(raw: string): Promise<Buffer> {
+export async function safeDownload(raw: string): Promise<Buffer> {
   let current = raw;
   for (let i = 0; i < 4; i++) {
     const url = await assertPublicUrl(current);
@@ -73,15 +75,17 @@ async function safeDownload(raw: string): Promise<Buffer> {
  * después los tamaños responsive para cada dispositivo.
  */
 export async function storeImage(input: Buffer, name: string, kind: "cover" | "phone", meta: ImageMeta, alt: string): Promise<MediaItem> {
-  const info = await sharp(input).metadata().catch(() => null);
-  if (!info) throw new ImportError("El archivo no es una imagen válida.");
+  const info = await sharp(input, { limitInputPixels: MAX_PIXELS }).metadata().catch(() => null);
+  if (!info?.width || !info.height) throw new ImportError("El archivo no es una imagen válida.");
+  if (!["jpeg", "png", "webp", "avif", "heif", "tiff"].includes(info.format ?? "")) throw new ImportError(`Formato no admitido (${info.format ?? "desconocido"}).`);
+  if (info.width * info.height > MAX_PIXELS) throw new ImportError("La imagen es demasiado grande (más de 80 megapíxeles).");
   const rotated = (info.orientation ?? 1) >= 5;
   const w = (rotated ? info.height : info.width) ?? 0;
   const h = (rotated ? info.width : info.height) ?? 0;
   if (Math.max(w, h) < MIN_WIDTH[kind] || (kind === "cover" && w < MIN_WIDTH.cover)) {
     throw new ImportError(`Resolución insuficiente (${w}×${h}). Mínimo ${MIN_WIDTH[kind]} px de ancho para ${kind === "cover" ? "portadas" : "fichas"}.`);
   }
-  const { data, info: out } = await sharp(input)
+  const { data, info: out } = await sharp(input, { limitInputPixels: MAX_PIXELS })
     .rotate()
     .resize({ width: MASTER_WIDTH, withoutEnlargement: true })
     .webp({ quality: 85 })

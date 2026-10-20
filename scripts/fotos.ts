@@ -1,6 +1,6 @@
 /**
- * Busca fotos reales con licencia para los artículos y fichas que aún usan una
- * ilustración, durante la compilación en Netlify (allí hay acceso a Openverse).
+ * Busca fotos reales con licencia para las portadas de artículos que aún usan una
+ * ilustración (los móviles usan la biblioteca fija, con aprobación manual), durante la compilación en Netlify (allí hay acceso a Openverse).
  * Las fotos elegidas se guardan en public/fotos y src/data/auto-photos.json, y
  * la web las sirve como cualquier otro recurso estático: no depende de ningún
  * almacenamiento en tiempo de ejecución.
@@ -15,7 +15,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
-import { phones } from "@/data/seed/phones";
 import { posts } from "@/data/seed/posts";
 import { metaFromCandidate } from "@/lib/images/import";
 import { attributionText } from "@/lib/images/licenses";
@@ -66,7 +65,7 @@ async function main() {
 
   const targets: { key: string; alt: string; t: ScoreTarget }[] = [
     ...posts.filter((p) => p.cover.illustrative).map((p) => ({ key: `post:${p.id}`, alt: p.cover.alt || p.title, t: { type: "post", post: p } as ScoreTarget })),
-    ...phones.filter((p) => p.image.illustrative).map((p) => ({ key: `phone:${p.id}`, alt: `${p.brand} ${p.model}`, t: { type: "phone", phone: p } as ScoreTarget })),
+    // Los móviles no: sus fotos salen de la biblioteca fija (Panel → Imágenes → Biblioteca de móviles), con aprobación manual.
   ];
 
   let found = 0;
@@ -146,7 +145,8 @@ async function main() {
     await fs.copyFile(path.join(CACHE, entry.file), path.join(PUBLIC, entry.file));
     out[key] = entry.ref;
   }
-  await fs.writeFile(OUT, JSON.stringify(out, null, 2) + "\n");
+  // Sin «null» (p. ej. autor desconocido): ImageRef usa campos opcionales.
+  await fs.writeFile(OUT, JSON.stringify(out, (_, v) => (v === null ? undefined : v), 2) + "\n");
   const summary = `${found} nuevas · ${Object.keys(out).length} fotos reales en total de ${targets.length} contenidos con ilustración${limited ? " · límite de Openverse alcanzado, se continúa en la próxima compilación" : ""}`;
   console.log(`[fotos] ${summary}`);
   await fs.mkdir(path.dirname(REPORT), { recursive: true });

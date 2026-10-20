@@ -18,6 +18,7 @@ export interface ImageRef {
 /** Proveedores de imágenes admitidos por el sistema. */
 export type ImageProviderId =
   | "upload"
+  | "wikimedia"
   | "openverse"
   | "pexels"
   | "feed"
@@ -66,6 +67,8 @@ export interface ImageMeta {
   /** Punto de interés para el recorte con object-fit: cover (porcentajes). */
   focalX?: number;
   focalY?: number;
+  /** Cambios hechos sobre el original (recorte, conversión…): CC BY-SA obliga a indicarlos. */
+  changes?: string;
   /** Variante/color mostrado, para comprobar que coincide con el producto. */
   variant?: string;
   externalId?: string;
@@ -211,6 +214,8 @@ export interface PriceOffer {
 
 export interface Phone {
   id: ID;
+  /** Dispositivo de la biblioteca de fotos (clave {marca}-{modelo}); se enlaza al importar el catálogo. */
+  deviceId?: ID;
   /** Colores comercializados (para descartar fotografías de otra variante). */
   colors?: string[];
   slug: string;
@@ -231,6 +236,30 @@ export interface Phone {
   specsVerified: boolean;
   officialUrl?: string;
   isDemo?: boolean;
+  updatedAt: string;
+}
+
+/** Vistas fotográficas de un dispositivo: la portada es la única imprescindible. */
+export type DeviceSlot = "main" | "front" | "back";
+
+/**
+ * Dispositivo de la biblioteca fija de fotos. Sus fotografías se eligen,
+ * guardan y aprueban una sola vez y se reutilizan en fichas, guías y comparativas.
+ */
+export interface Device {
+  /** Clave normalizada {marca}-{modelo}, p. ej. «samsung-galaxy-s24-plus». */
+  id: ID;
+  brand: string;
+  model: string;
+  year: number;
+  priority: "alta" | "media" | "baja";
+  family?: string;
+  slug: string;
+  /** Fase de importación del catálogo (1 = 54 prioritarios). */
+  phase: 1 | 2;
+  manufacturerReference?: string;
+  /** Solo fotos reales subidas o importadas; nunca rutas sugeridas. */
+  photos: Partial<Record<DeviceSlot, ImageRef>>;
   updatedAt: string;
 }
 
@@ -437,6 +466,7 @@ export interface Collections {
   users: User;
   messages: ContactMessage;
   imageSearches: ImageSearch;
+  devices: Device;
 }
 
 export type CollectionName = keyof Collections;

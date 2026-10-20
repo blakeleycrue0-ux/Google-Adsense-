@@ -12,7 +12,8 @@ import { DemoBadge } from "@/components/ui/Badge";
 import { ImageCredit } from "@/components/ui/ImageCredit";
 import { ArrowRight, ArrowUpRight, CheckIcon, MinusIcon } from "@/components/ui/Icons";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import { getCategoryMap, getPhoneBySlug, getPhones, getStoreMap, search } from "@/lib/content";
+import { getCategoryMap, getDevices, getPhoneBySlug, getPhones, getStoreMap, search } from "@/lib/content";
+import { approvedPhotos, slotLabel } from "@/lib/devices";
 import { formatDate, formatPrice } from "@/lib/format";
 import { TIER_LABEL, lowestOffer, phoneHref, phoneName } from "@/lib/phones";
 import { breadcrumbLd, productLd } from "@/lib/seo";
@@ -92,7 +93,9 @@ function specRows(p: Phone) {
 export default async function PhonePage({ params }: PageProps<"/moviles/[slug]">) {
   const phone = await getPhoneBySlug((await params).slug);
   if (!phone) notFound();
-  const [settings, stores, all, cats] = await Promise.all([getSettings(), getStoreMap(), getPhones(), getCategoryMap()]);
+  const [settings, stores, all, cats, devices] = await Promise.all([getSettings(), getStoreMap(), getPhones(), getCategoryMap(), getDevices()]);
+  // Vistas adicionales (frontal y trasera) aprobadas en la biblioteca de fotos.
+  const extraViews = approvedPhotos(phone.deviceId ? devices.get(phone.deviceId) : undefined).filter((v) => v.slot !== "main");
   const name = phoneName(phone);
   const alternatives = phone.alternativeIds.map((id) => all.find((p) => p.id === id)).filter(Boolean) as Phone[];
   const offers = [...phone.offers].sort((a, b) => a.price - b.price);
@@ -135,6 +138,20 @@ export default async function PhonePage({ params }: PageProps<"/moviles/[slug]">
               <p className="mt-2 text-center text-[12px] text-muted lg:text-left">
                 {phone.image.illustrative ? "Ilustración genérica a la espera de una fotografía autorizada del modelo." : <ImageCredit image={phone.image} />}
               </p>
+              {extraViews.length > 0 && (
+                <div className="mx-auto mt-4 grid max-w-[300px] grid-cols-2 gap-3 sm:max-w-[380px] lg:max-w-none">
+                  {extraViews.map((v) => (
+                    <figure key={v.slot}>
+                      <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-surface">
+                        <Photo image={v.image} fit="contain" sizes="(min-width: 1024px) 230px, 150px" className="p-3" />
+                      </div>
+                      <figcaption className="mt-1 text-[11px] text-muted">
+                        {slotLabel(v.slot)} · <ImageCredit image={v.image} />
+                      </figcaption>
+                    </figure>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

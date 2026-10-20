@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { db } from "@/lib/db";
+import { withLibraryPhoto } from "@/lib/devices";
 import { madridDayKey, normalizeText } from "@/lib/format";
 import { getSettings } from "@/lib/settings";
 import type { Category, Deal, Guide, LegalPage, Post, Store } from "@/lib/types";
@@ -149,9 +150,15 @@ export async function search(query: string) {
 
 // ---------- Móviles, tiendas y ofertas ----------
 
-export const getPhones = cache(async () =>
-  (await db().list("phones")).sort((a, b) => a.brand.localeCompare(b.brand) || a.model.localeCompare(b.model)),
-);
+export const getDevices = cache(async () => new Map((await db().list("devices")).map((d) => [d.id, d])));
+
+/** Fichas con la portada aprobada de la biblioteca de fotos (si la hay) en lugar de su imagen propia. */
+export const getPhones = cache(async () => {
+  const [phones, devices] = await Promise.all([db().list("phones"), getDevices()]);
+  return phones
+    .map((p) => withLibraryPhoto(p, p.deviceId ? devices.get(p.deviceId) : undefined))
+    .sort((a, b) => a.brand.localeCompare(b.brand) || a.model.localeCompare(b.model));
+});
 
 export async function getPhoneBySlug(slug: string) {
   return (await getPhones()).find((p) => p.slug === slug) ?? null;

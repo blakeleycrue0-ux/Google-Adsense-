@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import type { ActionResult } from "@/components/admin/forms";
 import { requireUser } from "@/lib/auth";
+import { deviceKey } from "@/lib/devices";
 import { db, newId } from "@/lib/db";
 import { slugify } from "@/lib/format";
 import { revalidateSite } from "@/lib/revalidate";
@@ -92,8 +93,13 @@ export async function savePhone(_: ActionResult, form: FormData): Promise<Action
     });
   }
 
+  // Enlace con la biblioteca de fotos: se conserva el existente o se enlaza por {marca}-{modelo}.
+  const key = deviceKey(d.brand, d.model);
+  const deviceId = existing?.deviceId ?? ((await db().get("devices", key)) ? key : undefined);
+
   const phone: Phone = {
     id: existing?.id ?? newId("ph_"),
+    deviceId,
     slug,
     brand: d.brand,
     model: d.model,
