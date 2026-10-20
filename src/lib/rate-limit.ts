@@ -1,7 +1,7 @@
 import "server-only";
 
-// Limitador en memoria por proceso (suficiente para un único servidor; en
-// despliegues con varias instancias conviene sustituirlo por Redis o similar).
+// Limitador en memoria por proceso: frena ataques de fuerza bruta sencillos al
+// inicio de sesión. En serverless cada instancia tiene el suyo.
 const buckets = new Map<string, { count: number; reset: number }>();
 
 export function rateLimit(key: string, limit: number, windowMs: number) {
@@ -19,5 +19,5 @@ export function rateLimit(key: string, limit: number, windowMs: number) {
 }
 
 export function clientIp(headers: Headers) {
-  return headers.get("x-forwarded-for")?.split(",")[0].trim() || headers.get("x-real-ip") || "local";
+  return headers.get("x-nf-client-connection-ip") || headers.get("x-forwarded-for")?.split(",")[0].trim() || headers.get("x-real-ip") || "local";
 }

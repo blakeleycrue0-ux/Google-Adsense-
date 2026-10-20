@@ -17,20 +17,18 @@ export async function login(_: LoginState, form: FormData): Promise<LoginState> 
   if (!rateLimit(`login:${ip}`, 10, 15 * 60_000)) return { error: "Demasiados intentos. Espera unos minutos." };
   const email = String(form.get("email") ?? "").trim().toLowerCase();
   const password = String(form.get("password") ?? "");
-  const users = await db().list("users");
+  let users: User[];
+  try {
+    users = await db().list("users");
+  } catch (e) {
+    return { error: `No se puede acceder al almacenamiento: ${(e as Error).message}` };
+  }
   let user = users.find((u) => u.email.toLowerCase() === email);
 
-  // Arranque: si no hay usuarios, se acepta la cuenta definida en variables de entorno.
+  // Arranque: si aún no hay cuentas, se acepta la definida en las variables de entorno.
   if (!users.length && process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
     if (email === process.env.ADMIN_EMAIL.toLowerCase() && password === process.env.ADMIN_PASSWORD) {
-      user = {
-        id: newId("usr_"),
-        email,
-        name: "Administración",
-        role: "admin",
-        passwordHash: await hashPassword(password),
-        createdAt: new Date().toISOString(),
-      };
+      user = { id: newId("usr_"), email, name: "Redacción", passwordHash: await hashPassword(password), createdAt: new Date().toISOString() };
       await db().put("users", user);
     }
   }
@@ -43,26 +41,25 @@ export async function login(_: LoginState, form: FormData): Promise<LoginState> 
 }
 
 const setupSchema = z.object({
-  name: z.string().trim().min(2).max(60),
-  email: z.string().trim().toLowerCase().email(),
-  password: z.string().min(12, "La contraseña debe tener al menos 12 caracteres"),
+  name: z.string().trim().min(2, "Escribe tu nombre").max(60),
+  email: z.string().trim().toLowerCase().email("Correo no válido"),
+  password: z.string().min(10, "La contraseña debe tener al menos 10 caracteres"),
   token: z.string().optional(),
 });
 
-/** Creación de la primera cuenta de administración (solo si no existe ninguna). */
+/** Primera cuenta (solo si no existe ninguna). */
 export async function setupAdmin(_: LoginState, form: FormData): Promise<LoginState> {
   if (!SETUP_ALLOWED()) return { error: "La configuración inicial no está habilitada." };
-  if ((await db().list("users")).length) return { error: "Ya existe una cuenta de administración." };
+  if ((await db().list("users")).length) return { error: "Ya existe una cuenta." };
   const parsed = setupSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   if (process.env.ADMIN_SETUP_TOKEN && parsed.data.token !== process.env.ADMIN_SETUP_TOKEN) {
-    return { error: "Token de configuración incorrecto." };
+    return { error: "Código de configuración incorrecto." };
   }
   const user: User = {
     id: newId("usr_"),
     email: parsed.data.email,
     name: parsed.data.name,
-    role: "admin",
     passwordHash: await hashPassword(parsed.data.password),
     createdAt: new Date().toISOString(),
   };

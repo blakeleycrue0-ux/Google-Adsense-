@@ -1,50 +1,55 @@
 "use client";
 
 import { useActionState } from "react";
-import { login, setupAdmin, type LoginState } from "./actions";
+import { login, setupAdmin } from "./actions";
 
 export function LoginForm() {
-  const [state, action, pending] = useActionState<LoginState, FormData>(login, null);
+  const [state, action, pending] = useActionState(login, null);
   return (
     <form action={action} className="space-y-4">
-      <div>
-        <label htmlFor="email" className="label">Correo electrónico</label>
-        <input id="email" name="email" type="email" autoComplete="username" required className="field" autoFocus />
-      </div>
-      <div>
-        <label htmlFor="password" className="label">Contraseña</label>
-        <input id="password" name="password" type="password" autoComplete="current-password" required className="field" />
-      </div>
-      {state?.error && <p role="alert" className="text-[13px] text-live">{state.error}</p>}
-      <button className="btn-primary w-full" disabled={pending}>{pending ? "Entrando…" : "Entrar"}</button>
+      <label className="block space-y-1">
+        <span className="text-sm font-medium">Correo</span>
+        <input name="email" type="email" required autoComplete="username" className="field" />
+      </label>
+      <label className="block space-y-1">
+        <span className="text-sm font-medium">Contraseña</span>
+        <input name="password" type="password" required autoComplete="current-password" className="field" />
+      </label>
+      {state?.error && <p className="text-sm text-live">{state.error}</p>}
+      <button className="btn btn-primary w-full" disabled={pending}>
+        {pending ? "Entrando…" : "Entrar"}
+      </button>
     </form>
   );
 }
 
 export function SetupForm({ needsToken }: { needsToken: boolean }) {
-  const [state, action, pending] = useActionState<LoginState, FormData>(setupAdmin, null);
+  const [state, action, pending] = useActionState(setupAdmin, null);
   return (
     <form action={action} className="space-y-4">
-      <div>
-        <label htmlFor="name" className="label">Nombre</label>
-        <input id="name" name="name" required className="field" autoFocus />
-      </div>
-      <div>
-        <label htmlFor="email" className="label">Correo electrónico</label>
-        <input id="email" name="email" type="email" autoComplete="username" required className="field" />
-      </div>
-      <div>
-        <label htmlFor="password" className="label">Contraseña (mínimo 12 caracteres)</label>
-        <input id="password" name="password" type="password" autoComplete="new-password" minLength={12} required className="field" />
-      </div>
+      <p className="rounded-md bg-surface p-3 text-sm text-ink-2">Aún no hay ninguna cuenta. Crea la tuya para empezar a publicar.</p>
+      <label className="block space-y-1">
+        <span className="text-sm font-medium">Tu nombre (aparecerá como autor)</span>
+        <input name="name" required className="field" />
+      </label>
+      <label className="block space-y-1">
+        <span className="text-sm font-medium">Correo</span>
+        <input name="email" type="email" required autoComplete="username" className="field" />
+      </label>
+      <label className="block space-y-1">
+        <span className="text-sm font-medium">Contraseña (mínimo 10 caracteres)</span>
+        <input name="password" type="password" required minLength={10} autoComplete="new-password" className="field" />
+      </label>
       {needsToken && (
-        <div>
-          <label htmlFor="token" className="label">Token de configuración (ADMIN_SETUP_TOKEN)</label>
-          <input id="token" name="token" type="password" required className="field" />
-        </div>
+        <label className="block space-y-1">
+          <span className="text-sm font-medium">Código de configuración</span>
+          <input name="token" required className="field" />
+        </label>
       )}
-      {state?.error && <p role="alert" className="text-[13px] text-live">{state.error}</p>}
-      <button className="btn-primary w-full" disabled={pending}>{pending ? "Creando…" : "Crear cuenta de administración"}</button>
+      {state?.error && <p className="text-sm text-live">{state.error}</p>}
+      <button className="btn btn-primary w-full" disabled={pending}>
+        {pending ? "Creando…" : "Crear cuenta"}
+      </button>
     </form>
   );
 }

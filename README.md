@@ -1,175 +1,68 @@
-# Voltio — medio digital de tecnología
+# Brisa Balear: noticias de Baleares
 
-> Nombre provisional. Se cambia en **Panel → Ajustes** (nombre, lema y URL); el logotipo está en `src/components/site/Logo.tsx`.
+> «Brisa Balear» es un nombre provisional. Se cambia en **Panel → Ajustes**.
 
-Plataforma completa para un medio tecnológico: noticias con fuentes, última hora, buscador y comparador de móviles, guías de compra, ofertas, monetización con Google AdSense y afiliados, y un panel de administración privado.
+Diario digital de noticias de Mallorca, Menorca, Ibiza y Formentera, preparado para Google AdSense. Tiene un panel privado para escribir noticias desde el móvil, con foto y un asistente de redacción con IA.
 
-**Stack:** Next.js 16 (App Router, TypeScript) · Tailwind CSS 4 · Geist · almacenamiento intercambiable (ficheros JSON o Supabase) · Zod · sharp.
+**Tecnología:** Next.js 16 · Tailwind CSS 4 · Netlify (con Netlify Blobs para guardar noticias y fotos, sin bases de datos externas) · Claude (asistente opcional).
 
----
+## Qué incluye
 
-## Puesta en marcha
+- **Web pública:** portada, última hora (con una cinta roja), páginas por isla y por sección, buscador y páginas de noticia con foto y crédito, fuentes y noticias relacionadas.
+- **Para Google:** sitemap, sitemap de Google News, RSS, robots.txt, datos estructurados `NewsArticle`, `ads.txt` automático y etiqueta de verificación de AdSense.
+- **Páginas legales:** aviso legal (LSSI), privacidad (con el texto que exige AdSense), cookies, quiénes somos, normas editoriales y contacto.
+- **Panel (`/admin`):**
+  - Escribir, publicar, retirar y borrar noticias.
+  - Subir fotos desde el móvil. La foto se reduce antes de subirla y se guarda en WebP sin datos GPS.
+  - Crédito obligatorio según el origen de la foto.
+  - Asistente de IA que convierte tus notas o una nota de prensa en un borrador.
+  - Lista «Camino a AdSense» y ajustes.
+
+## Publicar en Netlify
+
+1. En Netlify, conecta este repositorio. El archivo `netlify.toml` ya contiene la configuración de compilación.
+2. En **Site configuration → Environment variables**, crea estas variables (para todos los ámbitos):
+   - `SESSION_SECRET` y `STORE_SECRET`: dos textos aleatorios largos, de 40 caracteres o más.
+   - `ADMIN_EMAIL` y `ADMIN_PASSWORD`: tu cuenta del panel.
+   - `ANTHROPIC_API_KEY` (opcional): activa el asistente de IA.
+3. Despliega la web, entra en `https://tu-web/admin` y completa **Ajustes**: nombre, titular, NIF, domicilio y correo.
+
+## Fotos reales sin problemas de derechos
+
+| Origen | Cuándo usarlo | Crédito |
+|---|---|---|
+| **Tus fotos** (móvil) | Siempre que puedas: es lo que más valoran Google y los lectores | «Foto: tu nombre» |
+| **Notas de prensa oficiales** (Govern, ayuntamientos, Guardia Civil, Policía, 112, Consell) | Sucesos, obras, actos. Las difunden para que los medios las usen | «Foto: Guardia Civil» |
+| **Wikimedia Commons** | Lugares conocidos: catedral, aeropuerto, playas, pueblos | Autor + licencia CC |
+| **Unsplash / Pexels** | Imágenes genéricas: playa, tráfico, turistas, lluvia | «Foto: autor / Unsplash» |
+
+Nunca uses fotos de otros periódicos ni de Google Imágenes, ni imágenes generadas con IA para hechos reales.
+
+## Cómo conseguir la aprobación de AdSense
+
+1. **Publica entre 30 y 40 noticias propias** antes de solicitarla, con textos de 250 palabras o más, foto y fuentes. El asistente de IA te ayuda, pero cada noticia tiene que llevar tu revisión y algún dato propio. AdSense rechaza las webs con contenido copiado o generado en masa.
+2. **Usa un dominio propio** (`.es` o `.com`). Con `*.netlify.app` no se puede solicitar. Configúralo en Netlify y en Ajustes.
+3. Rellena los datos del titular y el correo de contacto.
+4. Da de alta la web en **Google Search Console**: pega el código en Ajustes y envía `/sitemap.xml`.
+5. En AdSense, añade tu sitio y pega el ID `ca-pub-…` en Ajustes. La etiqueta de verificación y `ads.txt` se generan solos.
+6. Activa **Mostrar anuncios** en Ajustes. En AdSense, activa los **anuncios automáticos** y el **mensaje RGPD** (Privacidad y mensajes). Ese mensaje es el aviso de cookies que exige la ley en Europa.
+7. Publica a diario. La revisión de Google tarda entre unos días y unas semanas.
+
+## Desarrollo local
 
 ```bash
 npm install
-cp .env.example .env.local   # opcional en desarrollo
-npm run dev                  # http://localhost:3000
+npm run dev        # http://localhost:3000 (en /admin se crea la primera cuenta)
+npm run typecheck && npm run lint && npm test
 ```
 
-- La web arranca con **contenido de demostración** claramente señalado (aviso superior, etiquetas «Demo», precios «no verificados»).
-- Panel: `http://localhost:3000/admin`. En desarrollo, la primera visita muestra un formulario para crear la cuenta de administración.
-- `npm run data:reset` borra los datos locales y vuelve al contenido de demostración.
-- Otros scripts: `npm run build`, `npm start`, `npm run lint`, `npm run typecheck`, `npm test` (pruebas unitarias), `npm run images:demo`.
+Sin Netlify, los datos se guardan en `./data`.
 
-## Dirección visual
-
-- **Paleta:** blanco `#FFFFFF`, superficies `#F5F5F5`, texto secundario `#737373`, texto `#171717`, filetes `#E5E5E5`. Un único acento (rojo) reservado al indicador de «Última hora».
-- **Tipografía:** Geist Sans para titulares (peso 650, interletraje negativo) y texto; Geist Mono en versalitas pequeñas para metadatos (categoría, hora, etiquetas). Esa combinación es la firma de la marca.
-- **Estructura editorial:** filetes finos y reglas de 2 px sobre cada sección en lugar de tarjetas; radios de 2–6 px; sombras solo en elementos flotantes.
-- **Secciones distintas entre sí:** portada asimétrica (principal 7/12 + secundaria y titulares), línea de tiempo para «Última hora», lista numerada para «Lo más leído», banda gris con pestañas por presupuesto para «¿Qué móvil comprar?», listado tipo tabla para ofertas.
-- **Movimiento:** aparición suave de imágenes, subrayado animado en titulares, microinteracciones en botones, barra de progreso de lectura. Se respeta `prefers-reduced-motion`.
-
-Los tokens están en `src/app/globals.css`.
-
-## Arquitectura
+## Estructura
 
 ```
-src/
-  app/
-    (site)/            Web pública (portada, noticias, categorías, móviles, comparador, guías, ofertas, legal, contacto)
-    admin/             Panel: login + (panel)/… protegido
-    api/               search, views (lecturas), cron/ingest
-    go/[id]            Redirección de enlaces de compra (afiliados + recuento de clics)
-    uploads/[...path]  Sirve las imágenes subidas con el adaptador de ficheros
-    sitemap.ts, robots.ts, feed.xml, news-sitemap.xml, ads.txt
-  components/          site, news, phones, commerce, ads, consent, seo, admin, ui
-  data/seed/           Contenido de demostración
-  lib/
-    db/                Adaptadores de almacenamiento (file | supabase)
-    content.ts         Consultas públicas (publicados, más leídos, búsqueda…)
-    ingest.ts          Detección RSS/Atom, duplicados y clasificación
-    ai.ts              Asistente opcional de borradores (Claude)
-    auth.ts            Sesiones firmadas (HMAC) y contraseñas scrypt
-    seo.ts             Datos estructurados schema.org
-  proxy.ts             Filtro rápido de /admin (la verificación real se hace en el servidor)
-supabase/schema.sql    Esquema para producción
-scripts/               Generador de ilustraciones de demostración
+src/app/(site)/       Web pública
+src/app/admin/        Panel privado
+src/lib/              Almacenamiento, sesiones, IA, fotos, SEO
+netlify/functions/    store (acceso a Blobs) y ai-draft-background (borradores de IA sin límite de tiempo)
 ```
-
-**Renderizado:** páginas públicas con ISR (revalidación cada 60 s) y revalidación inmediata de todo el sitio al guardar cualquier cambio en el panel. Las publicaciones programadas aparecen solas al llegar su hora.
-
-## Almacenamiento
-
-| Modo | Cuándo | Configuración |
-|---|---|---|
-| Ficheros JSON (`data/`) | Desarrollo, demo o un servidor con disco persistente (VPS, Docker con volumen) | `DATA_DIR` |
-| Supabase | Producción y despliegues serverless (Vercel…) | Ejecuta `supabase/schema.sql` y define `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` |
-
-La clave `service_role` solo se usa en el servidor; las tablas tienen RLS activado sin políticas públicas. Las imágenes se guardan en el bucket `media`. Si el disco es de solo lectura y no hay Supabase, el panel lo indica al guardar.
-
-> El adaptador de Supabase cumple el mismo contrato que el de ficheros, pero no se ha probado contra un proyecto real: valida el esquema y una publicación de prueba antes de lanzar.
-
-## Panel de administración
-
-Artículos (borrador, revisión, programación, publicación, retirada, vista previa, SEO, fuentes) · Detección de noticias · Fuentes RSS · Categorías · Imágenes (WebP optimizado) · Fichas de móviles con precios por tienda · Guías · Ofertas · Enlaces de compra · Tiendas y afiliados · Estadísticas internas · Mensajes de contacto · Páginas legales · Publicidad · Ajustes · Usuarios.
-
-- **Roles:** *Administración* (todo) y *Edición* (contenido y comercio; sin ajustes, publicidad, tiendas ni usuarios).
-- **Seguridad:** cookie `httpOnly` firmada (7 días), contraseñas scrypt, límite de intentos de inicio de sesión, comprobación de sesión y rol en cada página y acción de servidor, `noindex` en `/admin`.
-- **Primera cuenta en producción:** define `ADMIN_EMAIL` + `ADMIN_PASSWORD` (se crea al primer inicio de sesión) o `ADMIN_SETUP_TOKEN` para habilitar el formulario inicial. `SESSION_SECRET` es obligatorio.
-
-## Detección de noticias
-
-1. Añade fuentes RSS/Atom autorizadas en **Fuentes** (las de ejemplo vienen desactivadas: revisa sus condiciones de uso antes de activarlas).
-2. Pulsa «Buscar novedades ahora» o usa el cron `GET /api/cron/ingest` con `Authorization: Bearer $CRON_SECRET` (`vercel.json` lo programa cada 30 min).
-3. El sistema normaliza URLs, descarta lo ya visto, marca **duplicados probables** (similitud de titulares con otras fuentes y con artículos propios) y **sugiere categoría** por palabras clave.
-4. Desde la cola se crea un **borrador** con la fuente enlazada. Con `ANTHROPIC_API_KEY`, opcionalmente un esquema generado con IA a partir del titular y el extracto (nunca del artículo completo), marcado para verificación.
-
-Nada se publica automáticamente. Solo se almacenan titular, enlace, fecha y el extracto que publica la propia fuente.
-
-## Imágenes con licencia
-
-Las fotografías se gestionan en **Panel → Imágenes**. El sistema propone, comprueba y registra; nunca aprueba ni publica por sí solo.
-
-**Fuentes admitidas**
-
-| Fuente | Clave | Uso |
-|---|---|---|
-| Openverse | — (opcional `OPENVERSE_CLIENT_ID` / `OPENVERSE_CLIENT_SECRET` para más cuota) | Fuente principal: fotografías de Wikimedia Commons, Flickr y otros repositorios. Solo se piden licencias que permiten uso comercial y modificación. |
-| Pexels | `PEXELS_API_KEY` (opcional) | Fotografía genérica para noticias. |
-| Feeds RSS | — | Solo si marcas la fuente como autorizada (Fuentes → «La fuente autoriza reutilizar…») e indicas dónde consta el permiso. |
-| Prensa / afiliación | — | «Imagen por URL» o subida, indicando el permiso. |
-| Subida propia | — | Con licencia y autoría declaradas. |
-
-**Reglas que aplica el sistema**
-
-- Se descartan licencias no comerciales (NC), sin obras derivadas (ND) y desconocidas. No se copian imágenes de otros medios sin permiso.
-- **Móviles:** la imagen debe mencionar el modelo exacto; se rechazan otros números de modelo, variantes (Pro, Ultra, Plus…), la versión 4G de un modelo 5G y colores que no se comercializan (campo «Colores» de la ficha).
-- **Noticias:** relevancia por palabras clave del titular y etiquetas (traducidas al inglés para los bancos internacionales); resolución mínima de 1200 px de ancho y bonificación por proporción horizontal.
-- Se guarda la procedencia, licencia, autoría, permiso, quién la aprobó y cuándo. La atribución se muestra junto a la imagen y en `/creditos-imagenes`.
-- Las imágenes se optimizan a WebP (máx. 2400 px) y `next/image` genera los tamaños responsive; el punto focal elegido en el panel controla el recorte con `object-fit: cover`.
-- La importación por URL valida el destino (sin redes privadas, sin redirecciones a ellas), el tipo y el tamaño.
-- Un artículo nuevo no se puede publicar sin una imagen aprobada.
-
-**Automatización:** cada ejecución del cron (y el botón del panel) busca imágenes para lo detectado y para los contenidos sin imagen aprobada. La mejor candidata se publica sola si supera todos los controles: licencia comercial verificada, modelo exacto en móviles o tema claro en artículos (puntuación ≥ 60) y resolución suficiente. Figura como aprobada por «Automático (Voltio)» y se puede cambiar o quitar desde el panel. Las demás quedan como propuesta; el borrador creado desde una noticia hereda la suya. Si no hay ninguna imagen autorizada, el contenido queda pendiente de selección manual.
-
-> Los proveedores requieren salida a internet hacia sus dominios. Si un proveedor no responde, el panel muestra el error real («Comprobar conexión»); nunca se simulan resultados.
-
-## Biblioteca de móviles
-
-Catálogo cerrado de móviles (`src/data/catalogo/catalogo.json`, importado de `voltio_biblioteca_movil.zip`): 99 modelos de 2020 a 2026, 54 de ellos prioritarios (fase 1). Cada dispositivo tiene tres vistas: **portada** (imprescindible), **frontal** y **trasera**.
-
-- **Clave:** `{marca}-{modelo}` normalizada («+» cuenta como «plus»: Galaxy S24+ ≠ Galaxy S24). Las fichas existentes se enlazan por esa clave (`deviceId`) sin modificar ningún otro dato.
-- **Importación idempotente:** Panel → Imágenes → Biblioteca de móviles → «Importar fase 1 (54)» o «Ampliar a los 99». Reimportar solo actualiza la identidad (marca, modelo, año…) y nunca toca las fotos guardadas.
-- **Fotos:** se suben, se importan por URL (con permiso) o desde una página de Wikimedia Commons. De Commons se leen automáticamente la licencia, el autor y las categorías; solo se aceptan licencias con uso comercial y modificación. Toda foto entra como **propuesta**.
-- **Aprobación manual:** hay que confirmar que la foto muestra exactamente ese modelo. No se puede aprobar si falta el autor o la página de origen (CC BY / CC BY-SA), o el permiso (prensa o tiendas). Se registran licencia, autor, origen, cambios realizados, fecha y aprobador.
-- **Web:** solo se muestran fotos reales, aprobadas y con licencia completa. La portada aprobada sustituye a la imagen de la ficha en fichas, guías y comparativas; la frontal y la trasera aparecen en la ficha. Sin foto aprobada se mantiene la ilustración actual. Las rutas sugeridas del ZIP (`/moviles/…/portada.webp`) no se usan: no son fotos.
-- **Seguridad:** la importación por URL bloquea redes privadas (también tras redirecciones) y comprueba tipo, tamaño (≤ 25 MB, ≤ 80 megapíxeles) y formato real con sharp (no se aceptan SVG). Quitar una foto exige confirmarlo y el archivo se conserva en Medios.
-- **Almacenamiento:** las fotos se guardan con el almacenamiento configurado (ver «Almacenamiento»). Con `STORAGE_DRIVER=file` en Netlify el sistema de ficheros es de solo lectura y no se pueden subir fotos desde la web publicada.
-- **Candidatas:** `src/data/catalogo/candidatas-wikimedia.json` (5 páginas de Commons) aparece en la ficha de cada dispositivo con un botón para importarla; aun así hay que revisarla y aprobarla.
-
-## Despliegue en Netlify
-
-El sitio `voltio0` se despliega desde la rama de producción configurada en Netlify. En Netlify:
-
-- **Almacenamiento:** se usa Netlify Blobs automáticamente (contenido, ajustes, contadores e imágenes subidas). No hace falta ningún servicio externo. Las tiendas de Blobs son comunes a producción y a las previsualizaciones.
-- **Búsquedas de imágenes:** se ejecutan en el backend de Netlify, que tiene salida a internet. Las claves solo existen como variables de entorno del sitio.
-- **Automatización:** la función programada `voltio-cron` (cada hora, minuto 7 UTC) lanza la detección RSS y las propuestas de imágenes; `voltio-deploy-check` comprueba almacenamiento y proveedores tras cada despliegue de producción y deja el resultado en los registros con el prefijo `[voltio-diagnostico]`. Si una llamada se rechaza, el motivo aparece con el prefijo `[voltio-cron-auth]` (por ejemplo, falta `CRON_SECRET`). Las variables deben estar disponibles en el ámbito «Functions» y «Runtime», y se aplican en el siguiente despliegue.
-- **Variables:** `SESSION_SECRET`, `CRON_SECRET`, `NEXT_PUBLIC_SITE_URL`, `ADMIN_EMAIL` y `ADMIN_PASSWORD` (primera cuenta); opcionales `PEXELS_API_KEY`, `OPENVERSE_CLIENT_ID` y `OPENVERSE_CLIENT_SECRET`.
-
-## Monetización
-
-### Google AdSense
-- Configura el ID de editor (`ca-pub-…`) y los IDs de bloque por ubicación en **Panel → Publicidad** (o `NEXT_PUBLIC_ADSENSE_CLIENT`).
-- Ubicaciones: portada (tras destacados y a mitad), artículo (dentro del texto y al final), barra lateral y listados. Cada espacio **reserva su altura** (sin saltos de maquetación) y lleva la etiqueta «Publicidad».
-- Sin AdSense activo no se carga ningún script ni se muestra ningún hueco en la web pública; las ubicaciones quedan preparadas en el código.
-- `ads.txt` se genera automáticamente con tu ID.
-
-### Consentimiento (EEE)
-- Google Consent Mode v2 con todo **denegado por defecto** y banner propio con «Rechazar» tan visible como «Aceptar». Analytics solo se carga tras aceptarlo.
-- **Importante:** para servir anuncios de AdSense a usuarios del EEE, Reino Unido y Suiza, Google exige una **CMP certificada** integrada con el TCF. Usa el modo «CMP externa» en Ajustes y activa el mensaje de consentimiento del RGPD en AdSense → Privacidad y mensajes (o integra otra CMP certificada).
-
-### Afiliados
-- Todos los botones de compra apuntan a `/go/[id]` con `rel="sponsored nofollow"`. El destino y el código de afiliado se gestionan en el panel sin tocar el contenido.
-- En **Tiendas y afiliados** se activa cada programa (p. ej. Amazon: parámetro `tag`) cuando la cuenta esté aprobada. Para redes que generan enlaces propios, pega el enlace completo y desactiva «Aplicar código».
-- Aviso de afiliación junto a los botones, en el pie y en `/legal/publicidad-y-afiliados`. No se procesan compras en la web.
-
-## SEO
-
-Metadatos por página, canonical, Open Graph/Twitter, `sitemap.xml`, `news-sitemap.xml` (Google News, 48 h), `robots.txt`, RSS (`/feed.xml`), datos estructurados `NewsArticle`, `BreadcrumbList`, `ItemList`, `WebSite` (con SearchAction) y `NewsMediaOrganization`; `Product` solo cuando hay precios comprobados (nunca valoraciones inventadas). Verificación de Search Console y GA4 desde Ajustes.
-
-**Modo demostración** (activo por defecto): añade `noindex` y bloquea `robots.txt` para que no se indexe contenido de prueba. Desactívalo en Ajustes al lanzar.
-
-## Antes de publicar
-
-El panel muestra esta lista con su estado real en **Resumen**:
-
-1. Sustituir o eliminar los artículos de demostración e ilustraciones por contenido propio e imágenes con licencia.
-2. Comprobar las especificaciones de las fichas y sustituir los precios de demostración por precios comprobados.
-3. Completar los datos legales del titular y revisar con un profesional la privacidad, las cookies y el aviso legal.
-4. Configurar `SESSION_SECRET`, Supabase y la URL pública; desactivar el modo demostración.
-5. Solicitar AdSense con contenido original suficiente y configurar la CMP certificada.
-
-## Despliegue
-
-- **Vercel:** importa el repositorio, define las variables de `.env.example` (con Supabase) y despliega. El cron de detección se configura con `vercel.json`.
-- **Servidor propio / Docker:** `npm ci && npm run build && npm start` con `DATA_DIR` en un volumen persistente (o Supabase).

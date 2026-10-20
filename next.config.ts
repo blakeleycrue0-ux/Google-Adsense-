@@ -1,18 +1,14 @@
 import type { NextConfig } from "next";
 
-const supabaseHost = process.env.SUPABASE_URL ? new URL(process.env.SUPABASE_URL).hostname : undefined;
-
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
 ];
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  env: { NEXT_PUBLIC_IMAGE_HOST: supabaseHost ?? "" },
   turbopack: {
     rules: {
       "*.css": { loaders: ["@tailwindcss/turbopack"], as: "*.css" },
@@ -20,10 +16,10 @@ const nextConfig: NextConfig = {
   },
   images: {
     formats: ["image/avif", "image/webp"],
-    remotePatterns: supabaseHost ? [{ protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" }] : [],
   },
   experimental: {
-    serverActions: { bodySizeLimit: "8mb" },
+    // Las fotos se reducen en el navegador antes de subirlas; esto es margen.
+    serverActions: { bodySizeLimit: "5mb" },
   },
   async headers() {
     return [
