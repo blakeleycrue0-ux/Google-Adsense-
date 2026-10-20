@@ -1,5 +1,5 @@
 {
-  "name": "voltio",
+  "name": "noticias-baleares",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -8,15 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "images:demo": "node scripts/generate-demo-images.mjs",
-    "data:reset": "node -e \"require('fs').rmSync(process.env.DATA_DIR||'data',{recursive:true,force:true});console.log('Datos locales eliminados: se usará el contenido de demostración.')\"",
     "test": "vitest run"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
     "@netlify/blobs": "^11.1.4",
-    "@supabase/supabase-js": "^2.118.0",
-    "fast-xml-parser": "^5.11.2",
     "geist": "^1.8.1",
     "marked": "^18.1.1",
     "next": "16.4.2",

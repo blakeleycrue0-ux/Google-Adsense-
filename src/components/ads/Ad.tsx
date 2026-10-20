@@ -1,29 +1,19 @@
 import { adsActive, getSettings } from "@/lib/settings";
-import type { AdPlacement } from "@/lib/types";
 import { AdSlotClient } from "./AdSlotClient";
 
 /**
- * Ubicación publicitaria configurable desde el panel (Ajustes → Publicidad).
- * - Activa y configurada: muestra la unidad de AdSense con la etiqueta «Publicidad».
- * - Inactiva: no renderiza nada en la web pública.
+ * Bloque manual de anuncio. Solo aparece si AdSense está activado en el panel y
+ * se ha indicado el ID del bloque; si no, los anuncios automáticos de Google
+ * deciden dónde colocarlos.
  */
-export async function Ad({ placement, className = "" }: { placement: AdPlacement; className?: string }) {
+export async function Ad({ slot, className = "" }: { slot: "home" | "article"; className?: string }) {
   const s = await getSettings();
-  const slot = s.ads.slots[placement];
-  const active = adsActive(s) && slot?.enabled && /^\d{6,20}$/.test(slot.slotId);
-
-  // Sin AdSense activo no se muestra nada al público: el espacio queda preparado en el código.
-  if (!active) return null;
-
+  const slotId = s.slots[slot];
+  if (!adsActive(s) || !/^\d{6,20}$/.test(slotId)) return null;
   return (
     <aside aria-label="Publicidad" className={className}>
-      <p className="kicker mb-2 text-center text-faint">Publicidad</p>
-      <AdSlotClient
-        client={s.ads.client}
-        slotId={slot.slotId}
-        format={slot.format}
-        layout={placement === "article-inline" ? "in-article" : "default"}
-      />
+      <p className="kicker mb-2 text-center text-muted">Publicidad</p>
+      <AdSlotClient client={s.adsenseClient} slotId={slotId} inArticle={slot === "article"} />
     </aside>
   );
 }

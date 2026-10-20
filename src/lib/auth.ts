@@ -5,11 +5,11 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { db } from "@/lib/db";
-import type { Role, User } from "@/lib/types";
+import type { User } from "@/lib/types";
 
 const scrypt = promisify(scryptCb) as (pw: string, salt: Buffer, len: number) => Promise<Buffer>;
-export const SESSION_COOKIE = "voltio_session";
-const SESSION_DAYS = 7;
+export const SESSION_COOKIE = "nb_session";
+const SESSION_DAYS = 30;
 
 function secret() {
   const s = process.env.SESSION_SECRET;
@@ -36,14 +36,12 @@ export async function verifyPassword(password: string, stored: string) {
 
 const sign = (data: string) => createHmac("sha256", secret()).update(data).digest("base64url");
 
-export function createSessionToken(user: User) {
-  const payload = Buffer.from(
-    JSON.stringify({ uid: user.id, role: user.role, exp: Date.now() + SESSION_DAYS * 86400_000 }),
-  ).toString("base64url");
+function createSessionToken(user: User) {
+  const payload = Buffer.from(JSON.stringify({ uid: user.id, exp: Date.now() + SESSION_DAYS * 86400_000 })).toString("base64url");
   return `${payload}.${sign(payload)}`;
 }
 
-function readToken(token: string | undefined): { uid: string; role: Role; exp: number } | null {
+function readToken(token: string | undefined): { uid: string; exp: number } | null {
   if (!token) return null;
   const [payload, sig] = token.split(".");
   if (!payload || !sig) return null;
@@ -75,18 +73,12 @@ export async function clearSession() {
 export const getCurrentUser = cache(async (): Promise<User | null> => {
   const data = readToken((await cookies()).get(SESSION_COOKIE)?.value);
   if (!data) return null;
-  const user = await db().get("users", data.uid);
-  return user ?? null;
+  return (await db().get("users", data.uid)) ?? null;
 });
 
-/** Exige sesión (y rol si se indica). Úsalo en cada página y acción del panel. */
-export async function requireUser(role?: Role) {
+/** Exige sesión. Úsalo en cada página y acción del panel. */
+export async function requireUser() {
   const user = await getCurrentUser();
   if (!user) redirect("/admin/login");
-  if (role === "admin" && user.role !== "admin") redirect("/admin?error=permisos");
   return user;
-}
-
-export function publicUser(u: User) {
-  return { id: u.id, name: u.name, email: u.email, role: u.role };
 }

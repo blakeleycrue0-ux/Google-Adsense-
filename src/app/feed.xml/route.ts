@@ -1,23 +1,23 @@
-import { getCategoryMap, getPublishedPosts } from "@/lib/content";
+import { getPublished } from "@/lib/content";
 import { absoluteUrl, getSettings } from "@/lib/settings";
+import { sectionName } from "@/lib/site";
 import { xmlEscape } from "@/lib/xml";
 
 export const revalidate = 300;
 
 export async function GET() {
-  const [s, posts, cats] = await Promise.all([getSettings(), getPublishedPosts(), getCategoryMap()]);
-  const items = posts
+  const [s, articles] = await Promise.all([getSettings(), getPublished()]);
+  const items = articles
     .slice(0, 50)
-    .map((p) => {
-      const url = absoluteUrl(s, `/noticias/${p.slug}`);
+    .map((a) => {
+      const url = absoluteUrl(s, `/noticia/${a.slug}`);
       return `<item>
-  <title>${xmlEscape(p.title)}</title>
+  <title>${xmlEscape(a.title)}</title>
   <link>${url}</link>
   <guid isPermaLink="true">${url}</guid>
-  <pubDate>${new Date(p.publishedAt!).toUTCString()}</pubDate>
-  <category>${xmlEscape(cats.get(p.categoryId)?.name ?? "")}</category>
-  <description>${xmlEscape(p.subtitle)}</description>
-  <enclosure url="${xmlEscape(absoluteUrl(s, p.cover.src))}" type="image/webp" length="0"/>
+  <pubDate>${new Date(a.publishedAt!).toUTCString()}</pubDate>
+  <category>${xmlEscape(sectionName(a.section))}</category>
+  <description>${xmlEscape(a.summary)}</description>${a.photo ? `\n  <enclosure url="${xmlEscape(absoluteUrl(s, a.photo.url))}" type="image/webp" length="0"/>` : ""}
 </item>`;
     })
     .join("\n");
