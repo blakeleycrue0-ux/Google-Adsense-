@@ -145,7 +145,8 @@ async function main() {
     await fs.copyFile(path.join(CACHE, entry.file), path.join(PUBLIC, entry.file));
     out[key] = entry.ref;
   }
-  await fs.writeFile(OUT, JSON.stringify(out, null, 2) + "\n");
+  // Sin «null» (p. ej. autor desconocido): ImageRef usa campos opcionales.
+  await fs.writeFile(OUT, JSON.stringify(out, (_, v) => (v === null ? undefined : v), 2) + "\n");
   const summary = `${found} nuevas · ${Object.keys(out).length} fotos reales en total de ${targets.length} contenidos con ilustración${limited ? " · límite de Openverse alcanzado, se continúa en la próxima compilación" : ""}`;
   console.log(`[fotos] ${summary}`);
   await fs.mkdir(path.dirname(REPORT), { recursive: true });

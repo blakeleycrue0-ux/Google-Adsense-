@@ -8,7 +8,8 @@ import { dealLinks, deals, guides } from "./commerce";
 import { legalPages } from "./legal";
 
 // Fotos reales elegidas durante la compilación (scripts/fotos.ts); sustituyen a las ilustraciones.
-const photos = autoPhotos as Record<string, ImageRef>;
+// El JSON lo genera la compilación: su tipo inferido varía según las fotos encontradas.
+const photos = autoPhotos as unknown as Record<string, ImageRef>;
 
 const seeds: { [K in CollectionName]: Collections[K][] } = {
   categories,
