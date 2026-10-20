@@ -1,4 +1,4 @@
-import type { IslandId, PhotoLicense, SectionId } from "@/lib/site";
+import type { CategoryId, DifficultyId, PhotoLicense } from "@/lib/site";
 
 export interface Photo {
   url: string;
@@ -8,30 +8,36 @@ export interface Photo {
   height: number;
   alt: string;
   license: PhotoLicense;
-  /** Autor o entidad («Govern de les Illes Balears», «Joan Pérez / Wikimedia Commons»). */
+  /** Autor o entidad («Joan Pérez / Wikimedia Commons»). */
   author: string;
   sourceUrl?: string;
 }
 
-export interface Source {
-  name: string;
-  url: string;
-}
-
-export interface Article {
+/**
+ * Receta. «private» solo se ve en el panel; «published», en la web.
+ * Ingredientes y pasos se guardan línea a línea: una línea de ingredientes que
+ * empieza por «#» es un subtítulo («# Para la salsa»).
+ */
+export interface Recipe {
   id: string;
   slug: string;
   title: string;
+  /** Presentación corta (sale en Google y en las tarjetas). */
   summary: string;
-  /** Cuerpo en Markdown. */
-  body: string;
-  island: IslandId;
-  section: SectionId;
+  category: CategoryId;
+  ingredients: string[];
+  steps: string[];
+  /** Consejos, variantes y conservación (Markdown, opcional). */
+  tips: string;
+  prepMinutes: number;
+  cookMinutes: number;
+  /** Raciones: «4 personas», «1 bizcocho de 22 cm»… */
+  servings: string;
+  difficulty: DifficultyId;
+  tags: string[];
   photo: Photo | null;
-  breaking: boolean;
-  status: "draft" | "published";
+  status: "private" | "published";
   authorName: string;
-  sources: Source[];
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;
@@ -49,13 +55,24 @@ export interface User {
 export interface AiJob {
   id: string;
   status: "done" | "error";
-  draft?: { title: string; summary: string; body: string };
+  draft?: RecipeDraft;
   error?: string;
   createdAt: string;
 }
 
+export interface RecipeDraft {
+  title: string;
+  summary: string;
+  ingredients: string[];
+  steps: string[];
+  tips: string;
+  prepMinutes: number;
+  cookMinutes: number;
+  servings: string;
+}
+
 export interface Collections {
-  articles: Article;
+  recipes: Recipe;
   users: User;
   jobs: AiJob;
 }
@@ -65,11 +82,16 @@ export interface Settings {
   siteName: string;
   tagline: string;
   siteUrl: string;
+  /** Texto de la página «Sobre mí» (Markdown). */
+  about: string;
   /** Datos obligatorios del aviso legal (LSSI). */
   ownerName: string;
   ownerNif: string;
   ownerAddress: string;
   contactEmail: string;
+  /** Redes sociales (opcionales) para enlazar desde la web. */
+  instagram: string;
+  tiktok: string;
   /** ID de editor de AdSense: ca-pub-XXXXXXXXXXXXXXXX. */
   adsenseClient: string;
   adsEnabled: boolean;

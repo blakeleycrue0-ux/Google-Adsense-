@@ -1,12 +1,12 @@
 import { PHOTO_LICENSES, type PhotoLicense } from "@/lib/site";
 import type { Photo } from "@/lib/types";
 
-/** Texto del crédito que se muestra bajo la foto: «Foto: Govern de les Illes Balears». */
+/** Texto del crédito que se muestra bajo la foto: «Foto: Ana Pérez / Unsplash». */
 export function photoCredit(p: Pick<Photo, "license" | "author">) {
   const author = p.author.trim();
   switch (p.license) {
     case "own":
-      return author ? `Foto: ${author}` : "Foto: Redacción";
+      return author ? `Foto: ${author}` : "Foto propia";
     case "press":
       return `Foto: ${author}`;
     case "cc-by":
@@ -26,7 +26,7 @@ export function photoCredit(p: Pick<Photo, "license" | "author">) {
 export function creditError(license: string, author: string): string | null {
   if (!(license in PHOTO_LICENSES)) return "Indica de dónde sale la foto.";
   if (PHOTO_LICENSES[license as PhotoLicense].needsAuthor && !author.trim()) {
-    return "Esta foto exige indicar el autor o la entidad (por ejemplo, «Govern de les Illes Balears»).";
+    return "Esta foto exige indicar quién la hizo o quién te la ha cedido.";
   }
   return null;
 }

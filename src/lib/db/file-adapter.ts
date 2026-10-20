@@ -4,7 +4,8 @@ import path from "node:path";
 import type { CollectionName, Collections, Settings } from "@/lib/types";
 import type { DataAdapter } from "./adapter";
 
-const DATA_DIR = path.resolve(process.env.DATA_DIR || "./data");
+// En producción no se usa (Netlify Blobs o Supabase): se excluye del trazado de archivos.
+const DATA_DIR = path.resolve(/*turbopackIgnore: true*/ process.env.DATA_DIR || "./data");
 // Las subidas se sirven mediante /uploads/[...path] (Next.js no sirve lo que se
 // añade a public/ después de compilar).
 const UPLOAD_DIR = path.join(DATA_DIR, "uploads");

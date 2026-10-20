@@ -1,22 +1,23 @@
 import { getPublished } from "@/lib/content";
 import { absoluteUrl, getSettings } from "@/lib/settings";
-import { sectionName } from "@/lib/site";
+import { recipePath } from "@/lib/recipes";
+import { categoryName } from "@/lib/site";
 import { xmlEscape } from "@/lib/xml";
 
 export const revalidate = 300;
 
 export async function GET() {
-  const [s, articles] = await Promise.all([getSettings(), getPublished()]);
-  const items = articles
+  const [s, recipes] = await Promise.all([getSettings(), getPublished()]);
+  const items = recipes
     .slice(0, 50)
     .map((a) => {
-      const url = absoluteUrl(s, `/noticia/${a.slug}`);
+      const url = absoluteUrl(s, recipePath(a));
       return `<item>
   <title>${xmlEscape(a.title)}</title>
   <link>${url}</link>
   <guid isPermaLink="true">${url}</guid>
   <pubDate>${new Date(a.publishedAt!).toUTCString()}</pubDate>
-  <category>${xmlEscape(sectionName(a.section))}</category>
+  <category>${xmlEscape(categoryName(a.category))}</category>
   <description>${xmlEscape(a.summary)}</description>${a.photo ? `\n  <enclosure url="${xmlEscape(absoluteUrl(s, a.photo.url))}" type="image/webp" length="0"/>` : ""}
 </item>`;
     })

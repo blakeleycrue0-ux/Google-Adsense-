@@ -1,31 +1,43 @@
 import Link from "next/link";
-import { ISLANDS, SECTIONS } from "@/lib/site";
+import { CATEGORIES } from "@/lib/site";
+import type { Settings } from "@/lib/types";
 
 const LEGAL = [
-  { href: "/quienes-somos", label: "Quiénes somos" },
-  { href: "/normas-editoriales", label: "Normas editoriales" },
+  { href: "/sobre-mi", label: "Sobre mí" },
   { href: "/contacto", label: "Contacto" },
   { href: "/aviso-legal", label: "Aviso legal" },
   { href: "/privacidad", label: "Privacidad" },
   { href: "/cookies", label: "Cookies" },
 ];
 
-export function Footer({ siteName, tagline }: { siteName: string; tagline: string }) {
+export function Footer({ s }: { s: Settings }) {
+  const social = [
+    s.instagram && { href: `https://www.instagram.com/${s.instagram.replace(/^@/, "")}`, label: "Instagram" },
+    s.tiktok && { href: `https://www.tiktok.com/@${s.tiktok.replace(/^@/, "")}`, label: "TikTok" },
+  ].filter(Boolean) as { href: string; label: string }[];
   return (
-    <footer className="mt-16 bg-ink text-white/75">
+    <footer className="mt-16 bg-ink text-white/75 print:hidden">
       <div className="container-x py-10">
-        <p className="headline text-3xl text-white">{siteName}</p>
-        <p className="mt-1 text-sm">{tagline}</p>
+        <p className="headline text-3xl text-white">{s.siteName}</p>
+        <p className="mt-1 text-sm">{s.tagline}</p>
+        {social.length > 0 && (
+          <p className="mt-3 flex gap-4 text-sm">
+            {social.map((x) => (
+              <a key={x.href} href={x.href} target="_blank" rel="noopener noreferrer me" className="text-white underline underline-offset-2">
+                {x.label}
+              </a>
+            ))}
+          </p>
+        )}
         <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3">
-          <FooterList title="Islas" items={ISLANDS.map((i) => ({ href: `/isla/${i.id}`, label: i.name }))} />
-          <FooterList title="Secciones" items={SECTIONS.map((s) => ({ href: `/seccion/${s.id}`, label: s.name }))} />
+          <FooterList title="Categorías" items={CATEGORIES.map((c) => ({ href: `/recetas/${c.id}`, label: c.name }))} />
           <FooterList title="Información" items={LEGAL} />
         </div>
       </div>
       <div className="border-t border-white/15">
         <div className="container-x flex flex-wrap items-center justify-between gap-2 py-5 text-xs text-white/55">
           <p>
-            © {new Date().getFullYear()} {siteName}
+            © {new Date().getFullYear()} {s.siteName}
           </p>
           <Link href="/feed.xml" className="hover:text-white">
             RSS

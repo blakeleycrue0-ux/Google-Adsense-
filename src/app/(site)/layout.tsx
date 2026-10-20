@@ -1,11 +1,9 @@
-import { BreakingBar } from "@/components/site/BreakingBar";
 import { Footer } from "@/components/site/Footer";
 import { Header } from "@/components/site/Header";
-import { getBreaking } from "@/lib/content";
 import { adsActive, getSettings } from "@/lib/settings";
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
-  const [s, breaking] = await Promise.all([getSettings(), getBreaking()]);
+  const s = await getSettings();
   return (
     <>
       {/* AdSense (anuncios automáticos y bloques manuales). React lo coloca en <head>.
@@ -15,9 +13,8 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         <script async src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${s.adsenseClient}`} crossOrigin="anonymous" />
       )}
       <Header siteName={s.siteName} tagline={s.tagline} />
-      <BreakingBar items={breaking} />
       <main className="container-x py-5 sm:py-8">{children}</main>
-      <Footer siteName={s.siteName} tagline={s.tagline} />
+      <Footer s={s} />
     </>
   );
 }

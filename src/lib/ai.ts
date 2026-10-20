@@ -4,33 +4,37 @@ import { z } from "zod";
 
 /**
  * Asistente de redacción. Solo se activa con ANTHROPIC_API_KEY. Convierte las
- * notas de quien escribe (o una nota de prensa oficial) en un BORRADOR que
- * siempre se revisa antes de publicar. Nunca publica nada por sí mismo.
+ * notas de una receta en un BORRADOR ordenado que siempre se revisa antes de
+ * publicar. Nunca publica nada por sí mismo.
  *
  * Sin «server-only» porque también lo usa netlify/functions/ai-draft-background
  * (fuera de Next.js). Solo lo importa código de servidor: la clave nunca llega al navegador.
  */
 export const aiEnabled = () => Boolean(process.env.ANTHROPIC_API_KEY);
 
-const SYSTEM = `Eres redactor de un diario digital local de las Islas Baleares, en español de España. Conviertes las notas o la nota de prensa que te pasan en una noticia lista para que la persona que edita la revise.
+const SYSTEM = `Eres un cocinero profesional que ayuda a pasar a limpio recetas para una web de cocina en español de España. Recibes las notas de quien cocina (apuntes de clase de FP de cocina, una lista rápida, una receta dictada) y devuelves la receta ordenada para que la revise antes de publicarla.
 Reglas:
-- Usa solo la información proporcionada. No inventes nombres, cifras, horas, lugares, declaraciones ni citas.
-- Si falta un dato importante (hora, lugar exacto, fuente), escribe «[VERIFICAR: …]» en el texto.
-- Si el material es una nota de prensa, reescríbela con palabras propias y atribuye la información a quien la emite («según ha informado…»).
-- Estructura de pirámide invertida: lo más importante primero. Tono informativo, claro y sobrio, sin sensacionalismo ni adjetivos de más.
-- En sucesos, no identifiques a víctimas ni a menores y usa «presunto» cuando no haya condena.
-- Titular: máximo 110 caracteres, concreto, con el lugar si es relevante, sin clickbait.
-- Entradilla: 1-2 frases (máximo 250 caracteres) que resuman qué, quién, dónde y cuándo.
-- Cuerpo: 3-7 párrafos en Markdown. Puedes usar algún subtítulo «## …» si la noticia es larga. No repitas el titular.`;
+- Usa solo lo que dicen las notas. No inventes ingredientes, cantidades, temperaturas ni tiempos. Si falta un dato importante, escríbelo como «[REVISAR: …]» en el lugar donde iría.
+- Ingredientes: uno por elemento, con cantidad y unidad delante cuando la haya («200 g de harina de trigo»). Si hay elaboraciones separadas, añade subtítulos como elemento propio empezando por «# » («# Para la salsa»).
+- Pasos: uno por elemento, en orden, en imperativo y con detalles útiles (fuego, punto, textura). Sin numerar.
+- Presentación: 1-2 frases que describan el plato y lo que lo hace especial, sin exageraciones.
+- Consejos: variantes, trucos, conservación o técnica (Markdown breve). Vacío si las notas no dan para ello.
+- Tiempos en minutos (0 si no se sabe). Raciones como texto («4 personas»), vacío si no se sabe.
+- Usa vocabulario técnico de cocina correcto (sofrito, reducir, napar, ligar, pochar…) cuando corresponda.`;
 
 const Draft = z.object({
   title: z.string(),
   summary: z.string(),
-  body: z.string(),
+  ingredients: z.array(z.string()),
+  steps: z.array(z.string()),
+  tips: z.string(),
+  prepMinutes: z.number().int(),
+  cookMinutes: z.number().int(),
+  servings: z.string(),
 });
 export type Draft = z.infer<typeof Draft>;
 
-export async function draftArticle(input: { notes: string; island: string; section: string }): Promise<Draft> {
+export async function draftRecipe(input: { notes: string; category: string }): Promise<Draft> {
   if (!aiEnabled()) throw new Error("El asistente de IA no está configurado (falta ANTHROPIC_API_KEY en Netlify).");
   const client = new Anthropic();
   const response = await client.beta.messages.parse({
@@ -43,7 +47,7 @@ export async function draftArticle(input: { notes: string; island: string; secti
     messages: [
       {
         role: "user",
-        content: `Isla: ${input.island}\nSección: ${input.section}\n\nNotas / material de partida:\n${input.notes}`,
+        content: `Categoría: ${input.category}\n\nNotas de la receta:\n${input.notes}`,
       },
     ],
   });

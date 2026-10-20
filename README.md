@@ -1,77 +1,59 @@
-# Brisa Balear: noticias de Baleares
+# Recetario: web de recetas con panel privado
 
-> «Brisa Balear» es un nombre provisional. Se cambia en **Panel → Ajustes**.
+> «Recetario» es un nombre provisional. Se cambia en **Panel → Ajustes**.
 
-Diario digital de noticias de Mallorca, Menorca, Ibiza y Formentera, preparado para Google AdSense. Tiene un panel privado para escribir noticias desde el móvil, con foto y un asistente de redacción con IA.
+Web personal de recetas de cocina, preparada para Google AdSense. Desde un panel privado (que funciona en el móvil) guardas tus recetas. Cada una puede ser **privada**, solo para ti, o **publicada** en la web.
 
-**Tecnología:** Next.js 16 · Tailwind CSS 4 · Netlify · Supabase (noticias, ajustes y fotos; sin Supabase se usa Netlify Blobs) · Claude (asistente opcional).
+**Tecnología:** Next.js 16 · Tailwind CSS 4 · Netlify (Netlify Blobs para recetas y fotos; Supabase opcional) · Claude (asistente opcional).
 
 ## Qué incluye
 
-- **Web pública:** portada, última hora (con una cinta roja), páginas por isla y por sección, buscador y páginas de noticia con foto y crédito, fuentes y noticias relacionadas.
-- **Para Google:** sitemap, sitemap de Google News, RSS, robots.txt, datos estructurados `NewsArticle`, `ads.txt` automático y etiqueta de verificación de AdSense.
-- **Páginas legales:** aviso legal (LSSI), privacidad (con el texto que exige AdSense), cookies, quiénes somos, normas editoriales y contacto.
+- **Web pública:**
+  - Portada, todas las recetas y nueve categorías (entrantes, arroces y pastas, cuchara, carnes, pescados, verduras, salsas y fondos, panes y masas, postres).
+  - Página de receta con ingredientes que se pueden tachar mientras cocinas, pasos numerados, tiempos, raciones, dificultad y consejos.
+  - Botones de **Compartir** (menú del móvil o copiar enlace) e **Imprimir**.
+  - Buscador por nombre e ingrediente, «Sobre mí», contacto y páginas legales.
+- **Para Google:**
+  - Datos estructurados `Recipe`, para que Google pueda mostrar la receta con foto y tiempo en sus resultados.
+  - Migas de pan, sitemap (solo recetas publicadas), robots.txt y RSS.
+  - `ads.txt` y etiqueta de verificación de AdSense.
 - **Panel (`/admin`):**
-  - Escribir, publicar, retirar y borrar noticias.
-  - Subir fotos desde el móvil. La foto se reduce antes de subirla y se guarda en WebP sin datos GPS.
-  - Crédito obligatorio según el origen de la foto.
-  - Asistente de IA que convierte tus notas o una nota de prensa en un borrador.
-  - Lista «Camino a AdSense» y ajustes.
+  - Crear, editar, publicar, pasar a privada y borrar recetas.
+  - Fotos desde el móvil: se reducen y se les quita la ubicación GPS.
+  - Asistente de IA que ordena tus apuntes en ingredientes, pasos y tiempos.
+  - Filtro y buscador de recetas, lista «Camino a AdSense» y ajustes con «Sobre mí» y redes sociales.
+- **Reglas al publicar:** no se publica una receta sin presentación, ingredientes, al menos dos pasos y foto. Las privadas nunca aparecen en la web, en el sitemap ni en el buscador.
 
-## Publicar en Netlify
+## Variables en Netlify
 
-1. **Supabase:** abre tu proyecto → **SQL Editor**, pega el contenido de [`supabase/schema.sql`](supabase/schema.sql) y pulsa **Run**. Así se crean la tabla de noticias y el bucket público `media` para las fotos.
-2. En Netlify, conecta este repositorio. El archivo `netlify.toml` ya contiene la configuración de compilación.
-3. En **Site configuration → Environment variables**, crea estas variables (para todos los ámbitos):
-   - `SUPABASE_URL`: `https://moailacnffcohjbsfoyd.supabase.co`
-   - `SUPABASE_SERVICE_ROLE_KEY`: en Supabase → **Project Settings → API Keys**, la clave `service_role` (o la *secret key*). Es secreta: no la pegues en ningún otro sitio.
-   - `SESSION_SECRET` y `STORE_SECRET`: dos textos aleatorios largos, de 40 caracteres o más.
-   - `ADMIN_EMAIL` y `ADMIN_PASSWORD`: tu cuenta del panel.
-   - `ANTHROPIC_API_KEY` (opcional): activa el asistente de IA.
-4. Despliega la web, entra en `https://tu-web/admin` y completa **Ajustes**: nombre, titular, NIF, domicilio y correo.
-
-## Acceso al panel
-
-- Dirección: `https://voltio0.netlify.app/admin` (o `tu-dominio/admin` cuando lo tengas).
-- La primera vez se entra con `ADMIN_EMAIL` y `ADMIN_PASSWORD` de Netlify; la cuenta queda creada.
-- Después cambia la contraseña en **Panel → Ajustes → Cambiar contraseña** (mínimo 10 caracteres).
-
-## Fotos reales sin problemas de derechos
-
-| Origen | Cuándo usarlo | Crédito |
-|---|---|---|
-| **Tus fotos** (móvil) | Siempre que puedas: es lo que más valoran Google y los lectores | «Foto: tu nombre» |
-| **Notas de prensa oficiales** (Govern, ayuntamientos, Guardia Civil, Policía, 112, Consell) | Sucesos, obras, actos. Las difunden para que los medios las usen | «Foto: Guardia Civil» |
-| **Wikimedia Commons** | Lugares conocidos: catedral, aeropuerto, playas, pueblos | Autor + licencia CC |
-| **Unsplash / Pexels** | Imágenes genéricas: playa, tráfico, turistas, lluvia | «Foto: autor / Unsplash» |
-
-Nunca uses fotos de otros periódicos ni de Google Imágenes, ni imágenes generadas con IA para hechos reales.
+| Variable | Para qué |
+|---|---|
+| `SESSION_SECRET` | Firma las sesiones del panel (texto aleatorio de 40 caracteres o más) |
+| `STORE_SECRET` (o `CRON_SECRET`) | Secreto interno entre la web y las funciones de Netlify |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Primera cuenta del panel (se crea al entrar por primera vez) |
+| `STORAGE_DRIVER=netlify-blobs` | Guarda en Netlify Blobs |
+| `ANTHROPIC_API_KEY` (opcional) | Asistente de IA |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (opcional) | Guardar en Supabase en lugar de Blobs (ejecuta antes `supabase/schema.sql`) |
 
 ## Cómo conseguir la aprobación de AdSense
 
-1. **Publica entre 30 y 40 noticias propias** antes de solicitarla, con textos de 250 palabras o más, foto y fuentes. El asistente de IA te ayuda, pero cada noticia tiene que llevar tu revisión y algún dato propio. AdSense rechaza las webs con contenido copiado o generado en masa.
-2. **Usa un dominio propio** (`.es` o `.com`). Con `*.netlify.app` no se puede solicitar. Configúralo en Netlify y en Ajustes.
-3. Rellena los datos del titular y el correo de contacto.
-4. Da de alta la web en **Google Search Console**: pega el código en Ajustes y envía `/sitemap.xml`.
-5. En AdSense, añade tu sitio y pega el ID `ca-pub-…` en Ajustes. La etiqueta de verificación y `ads.txt` se generan solos.
-6. Activa **Mostrar anuncios** en Ajustes. En AdSense, activa los **anuncios automáticos** y el **mensaje RGPD** (Privacidad y mensajes). Ese mensaje es el aviso de cookies que exige la ley en Europa.
-7. Publica a diario. La revisión de Google tarda entre unos días y unas semanas.
+1. **Publica 20-30 recetas propias** con foto tuya, ingredientes, pasos y algún consejo. AdSense rechaza las webs con poco contenido o contenido copiado.
+2. Escribe el texto **Sobre mí** en Ajustes: quién eres, que estudias FP de cocina… Así Google sabe quién está detrás de la web.
+3. Completa tus datos de **titular** (nombre, NIF, domicilio) y el **correo de contacto**. El aviso legal es obligatorio por ley.
+4. **Usa un dominio propio** (.es o .com). Con `*.netlify.app` no se puede solicitar AdSense.
+5. Da de alta la web en **Google Search Console**: pega el código en Ajustes y envía `/sitemap.xml`.
+6. En AdSense, añade tu sitio, pega tu ID `ca-pub-…` en Ajustes y activa **Mostrar anuncios**. En AdSense, activa los **anuncios automáticos** y el **mensaje RGPD** (Privacidad y mensajes), que es el aviso de cookies.
 
-## Desarrollo local
+## Desarrollo
 
 ```bash
 npm install
 npm run dev        # http://localhost:3000 (en /admin se crea la primera cuenta)
-npm run typecheck && npm run lint && npm test
+npm run typecheck && npm run lint && npm test && npm run build
 ```
 
-Sin Supabase ni Netlify, los datos se guardan en `./data`.
+Sin Netlify, los datos se guardan en `./data`.
 
-## Estructura
+## Etapas anteriores
 
-```
-src/app/(site)/       Web pública
-src/app/admin/        Panel privado
-src/lib/              Almacenamiento, sesiones, IA, fotos, SEO
-netlify/functions/    store (acceso a Blobs) y ai-draft-background (borradores de IA sin límite de tiempo)
-```
+La web empezó como diario de noticias. Las noticias que se guardaron siguen en el almacenamiento, sin tocar, pero ya no se muestran. Sus direcciones antiguas (`/noticia/…`, `/isla/…`, `/seccion/…`) llevan a la portada.

@@ -28,7 +28,7 @@ export async function login(_: LoginState, form: FormData): Promise<LoginState> 
   // Arranque: si aún no hay cuentas, se acepta la definida en las variables de entorno.
   if (!users.length && process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
     if (email === process.env.ADMIN_EMAIL.toLowerCase() && password === process.env.ADMIN_PASSWORD) {
-      user = { id: newId("usr_"), email, name: "Redacción", passwordHash: await hashPassword(password), createdAt: new Date().toISOString() };
+      user = { id: newId("usr_"), email, name: email.split("@")[0], passwordHash: await hashPassword(password), createdAt: new Date().toISOString() };
       await db().put("users", user);
     }
   }

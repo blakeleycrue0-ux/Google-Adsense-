@@ -1,30 +1,96 @@
 import Link from "next/link";
-import { db } from "@/lib/db";
-import { formatSmart } from "@/lib/format";
+import { listRecipes } from "@/lib/content";
+import { formatSmart, normalizeText } from "@/lib/format";
 import { getSettings, validAdsenseClient } from "@/lib/settings";
-import { islandName, sectionName } from "@/lib/site";
+import { categoryName } from "@/lib/site";
 
-const GOAL = 30;
+const GOAL = 20;
 
 export default async function DashboardPage({ searchParams }: PageProps<"/admin">) {
-  const { borrada } = await searchParams;
-  const [s, all] = await Promise.all([getSettings(), db().list("articles")]);
-  const articles = all.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  const published = articles.filter((a) => a.status === "published");
-  const withOwnPhoto = published.filter((a) => a.photo).length;
+  const sp = await searchParams;
+  const filter = sp.ver === "publicadas" || sp.ver === "privadas" ? sp.ver : "todas";
+  const q = typeof sp.q === "string" ? sp.q.trim() : "";
+  const [s, all] = await Promise.all([getSettings(), listRecipes()]);
+  const recipes = all.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const published = recipes.filter((r) => r.status === "published");
+  const shown = recipes
+    .filter((r) => (filter === "publicadas" ? r.status === "published" : filter === "privadas" ? r.status === "private" : true))
+    .filter((r) => !q || normalizeText(`${r.title} ${r.ingredients.join(" ")} ${r.tags.join(" ")}`).includes(normalizeText(q)));
 
   const checklist = [
-    { ok: published.length >= GOAL, label: `Al menos ${GOAL} noticias propias publicadas (llevas ${published.length})` },
-    { ok: published.length > 0 && withOwnPhoto / published.length >= 0.8, label: "La mayoría de noticias con foto y crédito" },
+    { ok: published.length >= GOAL, label: `Al menos ${GOAL} recetas publicadas (llevas ${published.length})` },
+    { ok: published.length > 0 && published.every((r) => r.photo), label: "Todas las recetas publicadas con foto" },
+    { ok: Boolean(s.about.trim()), label: "Texto «Sobre mí» escrito" },
     { ok: Boolean(s.ownerName && s.ownerNif && s.ownerAddress), label: "Datos del titular completos (aviso legal)" },
     { ok: Boolean(s.contactEmail), label: "Correo de contacto" },
-    { ok: !s.siteUrl.includes("localhost") && !s.siteUrl.includes("netlify.app"), label: "Dominio propio configurado (recomendado)" },
+    { ok: !s.siteUrl.includes("localhost") && !s.siteUrl.includes("netlify.app"), label: "Dominio propio (.es o .com)" },
     { ok: validAdsenseClient(s.adsenseClient), label: "ID de editor de AdSense (ca-pub-…)" },
   ];
 
+  const tab = (id: string, label: string) => (
+    <Link
+      href={id === "todas" ? "/admin" : `/admin?ver=${id}`}
+      className={`rounded-full border px-3 py-1.5 text-sm ${filter === id ? "border-ink bg-ink text-white" : "border-line bg-paper"}`}
+    >
+      {label}
+    </Link>
+  );
+
   return (
     <div className="space-y-8">
-      {borrada && <p className="rounded-md bg-paper p-3 text-sm">Noticia eliminada.</p>}
+      {sp.borrada && <p className="rounded-md bg-paper p-3 text-sm">Receta eliminada.</p>}
+
+      <section>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-2xl font-bold">Mis recetas</h1>
+          <p className="text-sm text-muted">
+            {published.length} publicadas · {recipes.length - published.length} privadas
+          </p>
+        </div>
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          {tab("todas", "Todas")}
+          {tab("publicadas", "Publicadas")}
+          {tab("privadas", "Privadas")}
+          <form action="/admin" className="ml-auto flex w-full gap-2 sm:w-auto">
+            {filter !== "todas" && <input type="hidden" name="ver" value={filter} />}
+            <input name="q" defaultValue={q} placeholder="Buscar receta o ingrediente" className="field py-1.5 text-sm" />
+          </form>
+        </div>
+        {shown.length ? (
+          <ul className="divide-y divide-line overflow-hidden rounded-lg border border-line bg-paper">
+            {shown.map((r) => (
+              <li key={r.id}>
+                <Link href={`/admin/receta/${r.id}`} className="flex items-center gap-4 p-3 hover:bg-surface">
+                  <div className="size-14 shrink-0 overflow-hidden rounded bg-surface">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {r.photo && <img src={r.photo.url} alt="" className="size-full object-cover" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{r.title || "(sin nombre)"}</p>
+                    <p className="text-xs text-muted">
+                      {categoryName(r.category)} · {formatSmart(r.updatedAt)}
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded px-2 py-0.5 text-xs font-semibold ${r.status === "published" ? "bg-[#e7f6ec] text-ok" : "bg-surface text-muted"}`}
+                  >
+                    {r.status === "published" ? "Publicada" : "Privada"}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : recipes.length ? (
+          <p className="rounded-lg border border-dashed border-line bg-paper p-8 text-center text-ink-2">Ninguna receta coincide.</p>
+        ) : (
+          <div className="rounded-lg border border-dashed border-line bg-paper p-10 text-center">
+            <p className="text-ink-2">Aún no has guardado ninguna receta.</p>
+            <Link href="/admin/receta/nueva" className="btn btn-primary mt-4">
+              Guardar la primera
+            </Link>
+          </div>
+        )}
+      </section>
 
       <section className="rounded-lg border border-line bg-paper p-5">
         <h2 className="font-bold">Camino a AdSense</h2>
@@ -39,48 +105,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
           ))}
         </ul>
         {!process.env.ANTHROPIC_API_KEY && (
-          <p className="mt-4 text-sm text-warn">El asistente de redacción con IA está desactivado: falta la variable ANTHROPIC_API_KEY en Netlify.</p>
-        )}
-      </section>
-
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Noticias</h1>
-          <p className="text-sm text-muted">
-            {published.length} publicadas · {articles.length - published.length} borradores
-          </p>
-        </div>
-        {articles.length ? (
-          <ul className="divide-y divide-line overflow-hidden rounded-lg border border-line bg-paper">
-            {articles.map((a) => (
-              <li key={a.id}>
-                <Link href={`/admin/noticia/${a.id}`} className="flex items-center gap-4 p-3 hover:bg-surface">
-                  <div className="size-14 shrink-0 overflow-hidden rounded bg-surface">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    {a.photo && <img src={a.photo.url} alt="" className="size-full object-cover" />}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{a.title || "(sin titular)"}</p>
-                    <p className="text-xs text-muted">
-                      {islandName(a.island)} · {sectionName(a.section)} · {formatSmart(a.updatedAt)}
-                    </p>
-                  </div>
-                  <span
-                    className={`shrink-0 rounded px-2 py-0.5 text-xs font-semibold ${a.status === "published" ? "bg-[#e7f6ec] text-ok" : "bg-surface text-muted"}`}
-                  >
-                    {a.status === "published" ? (a.breaking ? "Publicada · Última hora" : "Publicada") : "Borrador"}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="rounded-lg border border-dashed border-line bg-paper p-10 text-center">
-            <p className="text-ink-2">Aún no has escrito ninguna noticia.</p>
-            <Link href="/admin/noticia/nueva" className="btn btn-primary mt-4">
-              Escribir la primera
-            </Link>
-          </div>
+          <p className="mt-4 text-sm text-warn">El asistente de IA está desactivado: falta la variable ANTHROPIC_API_KEY en Netlify (opcional).</p>
         )}
       </section>
     </div>

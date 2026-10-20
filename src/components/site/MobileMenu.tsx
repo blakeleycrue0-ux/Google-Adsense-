@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ISLANDS, SECTIONS } from "@/lib/site";
+import { CATEGORIES } from "@/lib/site";
 
 const INFO = [
-  { href: "/quienes-somos", label: "Quiénes somos" },
+  { href: "/sobre-mi", label: "Sobre mí" },
   { href: "/contacto", label: "Contacto" },
   { href: "/aviso-legal", label: "Aviso legal" },
   { href: "/privacidad", label: "Privacidad" },
@@ -46,12 +46,10 @@ export function MobileMenu() {
               if ((e.target as HTMLElement).closest("a")) setOpen(false);
             }}
           >
-            <Link href="/ultima-hora" className="flex items-center gap-2 text-lg font-bold">
-              <span className="live-dot size-2 rounded-full bg-ink" aria-hidden />
-              Última hora
+            <Link href="/recetas" className="block text-lg font-bold">
+              Todas las recetas →
             </Link>
-            <MenuGroup title="Islas" items={ISLANDS.map((i) => ({ href: `/isla/${i.id}`, label: i.name }))} />
-            <MenuGroup title="Secciones" items={SECTIONS.map((s) => ({ href: `/seccion/${s.id}`, label: s.name }))} />
+            <MenuGroup title="Categorías" items={CATEGORIES.map((c) => ({ href: `/recetas/${c.id}`, label: c.name }))} />
             <MenuGroup title="Información" items={INFO} small />
           </nav>
         </div>

@@ -1,11 +1,10 @@
 import Link from "next/link";
-import { formatLongDate } from "@/lib/format";
-import { ISLANDS, SECTIONS } from "@/lib/site";
+import { CATEGORIES } from "@/lib/site";
 import { MobileMenu } from "./MobileMenu";
 
 export function Logo({ name, className = "" }: { name: string; className?: string }) {
   return (
-    <Link href="/" className={`headline whitespace-nowrap tracking-tight ${className}`} aria-label={`${name}, portada`}>
+    <Link href="/" className={`headline whitespace-nowrap tracking-tight ${className}`} aria-label={`${name}, inicio`}>
       {name}
     </Link>
   );
@@ -19,40 +18,34 @@ const SearchIcon = () => (
 );
 
 /**
- * Móvil: barra fija (menú · nombre · buscar) y las cuatro islas en pestañas
- * de igual ancho, sin nada que se corte. Escritorio: cabecera de periódico con
- * fecha, nombre centrado y dos filas de navegación.
+ * Móvil: barra fija (menú · nombre · buscar). Escritorio: nombre centrado y
+ * una fila con las categorías.
  */
 export function Header({ siteName, tagline }: { siteName: string; tagline: string }) {
-  const islands = ISLANDS.filter((i) => i.id !== "baleares");
   return (
     <>
       {/* Móvil y tableta */}
-      <header className="sticky top-0 z-40 border-b border-line bg-paper lg:hidden">
+      <header className="sticky top-0 z-40 border-b border-line bg-paper lg:hidden print:hidden">
         <div className="container-x flex h-14 items-center justify-between">
           <MobileMenu />
           <Logo name={siteName} className="text-[1.6rem]" />
-          <Link href="/buscar" className="-mr-2 grid size-11 place-items-center rounded-md hover:bg-surface" aria-label="Buscar">
+          <Link href="/buscar" className="-mr-2 grid size-11 place-items-center rounded-md hover:bg-surface" aria-label="Buscar recetas">
             <SearchIcon />
           </Link>
         </div>
       </header>
-      <nav aria-label="Islas" className="border-b border-line bg-surface lg:hidden">
-        <ul className="container-x grid grid-cols-4 text-center text-[13px] font-semibold">
-          {islands.map((i) => (
-            <li key={i.id}>
-              <Link href={`/isla/${i.id}`} className="block py-2.5 text-ink-2 hover:text-ink">
-                {i.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
 
       {/* Escritorio */}
-      <header className="hidden border-b border-line lg:block">
+      <header className="hidden border-b border-line lg:block print:hidden">
         <div className="container-x grid grid-cols-[1fr_auto_1fr] items-center gap-6 pb-5 pt-6">
-          <p className="text-sm text-muted first-letter:uppercase">{formatLongDate()}</p>
+          <nav aria-label="Principal" className="flex gap-5 text-sm font-semibold">
+            <Link href="/recetas" className="hover:underline">
+              Todas las recetas
+            </Link>
+            <Link href="/sobre-mi" className="hover:underline">
+              Sobre mí
+            </Link>
+          </nav>
           <div className="text-center">
             <Logo name={siteName} className="text-5xl" />
             <p className="mt-1.5 text-sm text-muted">{tagline}</p>
@@ -63,29 +56,12 @@ export function Header({ siteName, tagline }: { siteName: string; tagline: strin
             </Link>
           </div>
         </div>
-        <nav aria-label="Islas" className="border-y border-ink">
-          <ul className="container-x flex items-center justify-center gap-1 text-sm font-semibold">
-            <li>
-              <Link href="/ultima-hora" className="flex items-center gap-2 px-4 py-3 hover:bg-surface">
-                <span className="live-dot size-2 rounded-full bg-ink" aria-hidden />
-                Última hora
-              </Link>
-            </li>
-            {ISLANDS.map((i) => (
-              <li key={i.id}>
-                <Link href={`/isla/${i.id}`} className="block px-4 py-3 hover:bg-surface">
-                  {i.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        <nav aria-label="Secciones">
-          <ul className="container-x flex flex-wrap items-center justify-center gap-x-1 text-[13px] text-ink-2">
-            {SECTIONS.map((s) => (
-              <li key={s.id}>
-                <Link href={`/seccion/${s.id}`} className="block px-3 py-2.5 hover:text-ink hover:underline">
-                  {s.name}
+        <nav aria-label="Categorías" className="border-y border-ink">
+          <ul className="container-x flex flex-wrap items-center justify-center text-[13px] font-semibold">
+            {CATEGORIES.map((c) => (
+              <li key={c.id}>
+                <Link href={`/recetas/${c.id}`} className="block px-3 py-3 hover:bg-surface">
+                  {c.name}
                 </Link>
               </li>
             ))}

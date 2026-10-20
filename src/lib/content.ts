@@ -2,42 +2,50 @@ import "server-only";
 import { cache } from "react";
 import { db } from "@/lib/db";
 import { normalizeText } from "@/lib/format";
-import type { Article } from "@/lib/types";
+import { normalizeRecipe } from "@/lib/recipes";
+import type { Recipe } from "@/lib/types";
 
-const byDate = (a: Article, b: Article) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? "");
+const byDate = (a: Recipe, b: Recipe) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? "");
 
-/** Noticias publicadas, de la más reciente a la más antigua. */
-export const getPublished = cache(async (): Promise<Article[]> => {
-  const all = await db()
-    .list("articles")
-    .catch((e) => {
-      console.error("[contenido] No se pudieron leer las noticias:", e);
-      return [] as Article[];
-    });
-  return all.filter((a) => a.status === "published" && a.publishedAt).sort(byDate);
+/** Todas las recetas (privadas y publicadas), normalizadas. Solo para el panel. */
+export async function listRecipes(): Promise<Recipe[]> {
+  return (await db().list("recipes")).map((r) => normalizeRecipe(r));
+}
+
+export async function getRecipe(id: string) {
+  const raw = await db().get("recipes", id);
+  return raw ? normalizeRecipe(raw) : null;
+}
+
+/** Recetas publicadas, de la más reciente a la más antigua. Las privadas nunca salen de aquí. */
+export const getPublished = cache(async (): Promise<Recipe[]> => {
+  const all = await listRecipes().catch((e) => {
+    console.error("[contenido] No se pudieron leer las recetas:", e);
+    return [] as Recipe[];
+  });
+  return all.filter((r) => r.status === "published" && r.publishedAt).sort(byDate);
 });
 
 export async function getBySlug(slug: string) {
-  return (await getPublished()).find((a) => a.slug === slug) ?? null;
+  return (await getPublished()).find((r) => r.slug === slug) ?? null;
 }
 
-/** Última hora: marcadas como tal en las últimas 24 horas. */
-export async function getBreaking() {
-  const since = new Date(Date.now() - 86400_000).toISOString();
-  return (await getPublished()).filter((a) => a.breaking && a.publishedAt! >= since);
+export async function getByCategory(category: string) {
+  return (await getPublished()).filter((r) => r.category === category);
 }
 
-export async function getRelated(article: Article, limit = 4) {
-  const rest = (await getPublished()).filter((a) => a.id !== article.id);
-  const same = rest.filter((a) => a.island === article.island || a.section === article.section);
-  return [...same, ...rest.filter((a) => !same.includes(a))].slice(0, limit);
+export async function getRelated(recipe: Recipe, limit = 4) {
+  const rest = (await getPublished()).filter((r) => r.id !== recipe.id);
+  const score = (r: Recipe) => (r.category === recipe.category ? 2 : 0) + r.tags.filter((t) => recipe.tags.includes(t)).length;
+  const scored = rest.map((r) => ({ r, s: score(r) })).sort((a, b) => b.s - a.s || byDate(a.r, b.r));
+  return scored.slice(0, limit).map((x) => x.r);
 }
 
 export async function search(query: string) {
   const terms = normalizeText(query).split(/\s+/).filter((t) => t.length > 1);
   if (!terms.length) return [];
-  return (await getPublished()).filter((a) => {
-    const text = normalizeText(`${a.title} ${a.summary} ${a.body}`);
+  return (await getPublished()).filter((r) => {
+    const text = normalizeText(`${r.title} ${r.summary} ${r.ingredients.join(" ")} ${r.tags.join(" ")}`);
     return terms.every((t) => text.includes(t));
   });
 }

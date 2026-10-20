@@ -7,6 +7,6 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
   const s = await getSettings();
   return {
     rules: [{ userAgent: "*", allow: "/", disallow: ["/admin", "/buscar"] }],
-    sitemap: [absoluteUrl(s, "/sitemap.xml"), absoluteUrl(s, "/news-sitemap.xml")],
+    sitemap: absoluteUrl(s, "/sitemap.xml"),
   };
 }

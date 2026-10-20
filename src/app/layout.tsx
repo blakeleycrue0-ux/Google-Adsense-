@@ -9,7 +9,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     metadataBase: new URL(s.siteUrl),
     title: { default: `${s.siteName} · ${s.tagline}`, template: `%s · ${s.siteName}` },
-    description: `${s.tagline}. Sucesos, tráfico, tiempo, política, sociedad y agenda de las Islas Baleares.`,
+    description: `${s.tagline}. Recetas caseras con ingredientes, tiempos y trucos: entrantes, arroces, cuchara, carnes, pescados, postres y bases de cocina.`,
     applicationName: s.siteName,
     alternates: { types: { "application/rss+xml": "/feed.xml" } },
     robots: { index: true, follow: true, "max-image-preview": "large" },

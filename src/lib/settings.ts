@@ -1,13 +1,16 @@
 import "server-only";
 import { cache } from "react";
 import { db } from "@/lib/db";
-import { DEFAULT_SITE_NAME, DEFAULT_TAGLINE } from "@/lib/site";
+import { DEFAULT_SITE_NAME, DEFAULT_TAGLINE, LEGACY_SITE_NAMES, LEGACY_TAGLINES } from "@/lib/site";
 import type { Settings } from "@/lib/types";
 
 export const DEFAULT_SETTINGS: Settings = {
   siteName: DEFAULT_SITE_NAME,
   tagline: DEFAULT_TAGLINE,
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL || process.env.URL || "http://localhost:3000",
+  about: "",
+  instagram: "",
+  tiktok: "",
   ownerName: "",
   ownerNif: "",
   ownerAddress: "",
@@ -22,7 +25,11 @@ export const getSettings = cache(async (): Promise<Settings> => {
   const stored = await db()
     .getSettings()
     .catch(() => null);
-  return { ...DEFAULT_SETTINGS, ...stored, slots: { ...DEFAULT_SETTINGS.slots, ...stored?.slots } };
+  const s = { ...DEFAULT_SETTINGS, ...stored, slots: { ...DEFAULT_SETTINGS.slots, ...stored?.slots } };
+  // La web empezó como diario de noticias: si sigue guardado aquel nombre, se usa el nuevo.
+  if (!s.siteName || LEGACY_SITE_NAMES.includes(s.siteName)) s.siteName = DEFAULT_SITE_NAME;
+  if (!s.tagline || LEGACY_TAGLINES.includes(s.tagline)) s.tagline = DEFAULT_TAGLINE;
+  return s;
 });
 
 export const validAdsenseClient = (c: string) => /^ca-pub-\d{10,20}$/.test(c);

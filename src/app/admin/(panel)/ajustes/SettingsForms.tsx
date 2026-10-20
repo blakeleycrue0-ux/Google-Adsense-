@@ -38,6 +38,21 @@ export function SettingsForm({ s }: { s: Settings }) {
         <Field label="Dirección de la web" name="siteUrl" type="url" defaultValue={s.siteUrl} hint="Con tu dominio cuando lo tengas, p. ej. https://www.tudominio.es" />
       </Card>
 
+      <Card title="Sobre mí">
+        <label className="block space-y-1">
+          <span className="text-sm font-semibold">Texto de la página «Sobre mí»</span>
+          <textarea
+            name="about"
+            defaultValue={s.about}
+            rows={6}
+            placeholder="Quién eres, por qué cocinas, qué estudias (por ejemplo, FP de cocina)… Google y AdSense valoran saber quién está detrás de la web."
+            className="field"
+          />
+        </label>
+        <Field label="Instagram (usuario)" name="instagram" defaultValue={s.instagram} placeholder="tu_usuario" />
+        <Field label="TikTok (usuario)" name="tiktok" defaultValue={s.tiktok} placeholder="tu_usuario" />
+      </Card>
+
       <Card title="Titular (aviso legal)">
         <p className="text-sm text-ink-2">La ley (LSSI) obliga a mostrar quién está detrás de la web. AdSense también lo revisa.</p>
         <Field label="Nombre y apellidos o empresa" name="ownerName" defaultValue={s.ownerName} />
@@ -66,7 +81,7 @@ export function SettingsForm({ s }: { s: Settings }) {
           <div className="mt-3 space-y-3">
             <p className="text-muted">Si usas solo anuncios automáticos, déjalos vacíos.</p>
             <Field label="Bloque en portada y listados" name="slotHome" defaultValue={s.slots.home} inputMode="numeric" />
-            <Field label="Bloque dentro de las noticias" name="slotArticle" defaultValue={s.slots.article} inputMode="numeric" />
+            <Field label="Bloque dentro de las recetas" name="slotArticle" defaultValue={s.slots.article} inputMode="numeric" />
           </div>
         </details>
       </Card>

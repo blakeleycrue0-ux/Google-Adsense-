@@ -14,14 +14,14 @@ export default async function PanelLayout({ children }: { children: React.ReactN
       <header className="border-b border-line bg-paper">
         <div className="container-x flex flex-wrap items-center justify-between gap-3 py-3">
           <Link href="/admin" className="font-extrabold">
-            {s.siteName} <span className="font-normal text-muted">· Redacción</span>
+            {s.siteName} <span className="font-normal text-muted">· Panel</span>
           </Link>
           <nav className="flex flex-wrap items-center gap-1 text-sm">
-            <Link href="/admin/noticia/nueva" className="btn btn-primary px-3 py-1.5">
-              + Nueva noticia
+            <Link href="/admin/receta/nueva" className="btn btn-primary px-3 py-1.5">
+              + Nueva receta
             </Link>
             <Link href="/admin" className="rounded px-3 py-1.5 hover:bg-surface">
-              Noticias
+              Mis recetas
             </Link>
             <Link href="/admin/ajustes" className="rounded px-3 py-1.5 hover:bg-surface">
               Ajustes

@@ -9,15 +9,15 @@ export default async function ContactPage() {
   return (
     <InfoPage title="Contacto">
       <p>
-        Escríbenos a <ContactEmail s={s} /> para:
+        Escríbeme a <ContactEmail s={s} /> para:
       </p>
       <ul>
-        <li>Enviarnos una noticia o una foto de algo que esté pasando en tu zona (indica si podemos citarte como autor).</li>
-        <li>Avisarnos de un error en una noticia.</li>
-        <li>Notas de prensa de ayuntamientos, asociaciones, clubes y empresas.</li>
-        <li>Publicidad y colaboraciones.</li>
+        <li>Preguntarme dudas sobre una receta o contarme cómo te ha salido.</li>
+        <li>Avisarme de un error en una receta.</li>
+        <li>Proponerme una receta que te gustaría ver aquí.</li>
+        <li>Colaboraciones.</li>
       </ul>
-      <p>Respondemos lo antes posible.</p>
+      <p>Respondo lo antes posible.</p>
     </InfoPage>
   );
 }

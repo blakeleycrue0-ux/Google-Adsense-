@@ -1,4 +1,4 @@
-import { draftArticle } from "../../src/lib/ai";
+import { draftRecipe } from "../../src/lib/ai";
 import { writeJob } from "../../src/lib/db/job-writer";
 
 /**
@@ -9,11 +9,11 @@ import { writeJob } from "../../src/lib/db/job-writer";
 const handler = async (req: Request) => {
   const secret = process.env.STORE_SECRET || process.env.CRON_SECRET;
   if (req.method !== "POST" || !secret || req.headers.get("authorization") !== `Bearer ${secret}`) return;
-  const { id, notes, island, section } = (await req.json()) as { id: string; notes: string; island: string; section: string };
+  const { id, notes, category } = (await req.json()) as { id: string; notes: string; category: string };
   if (!/^ai_[a-z0-9]{16}$/.test(id)) return;
   const createdAt = new Date().toISOString();
   try {
-    const draft = await draftArticle({ notes, island, section });
+    const draft = await draftRecipe({ notes, category });
     await writeJob({ id, status: "done", draft, createdAt });
   } catch (e) {
     await writeJob({ id, status: "error", error: (e as Error).message.slice(0, 300), createdAt });

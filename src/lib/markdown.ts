@@ -25,14 +25,3 @@ const sanitizeOptions: sanitizeHtml.IOptions = {
 export function renderMarkdown(md: string) {
   return sanitizeHtml(marked.parse(md, { async: false }) as string, sanitizeOptions);
 }
-
-/**
- * Divide el HTML en dos mitades por un párrafo intermedio para intercalar un
- * anuncio dentro de la noticia (solo si es lo bastante larga).
- */
-export function splitForAd(html: string): [string, string] {
-  const blocks = html.split(/(?<=<\/p>)/);
-  if (blocks.length < 5) return [html, ""];
-  const mid = Math.floor(blocks.length / 2);
-  return [blocks.slice(0, mid).join(""), blocks.slice(mid).join("")];
-}

@@ -1,7 +1,7 @@
 import { getSettings } from "@/lib/settings";
 import type { Settings } from "@/lib/types";
 
-/** Página informativa (legal, quiénes somos…) con el mismo formato de texto que las noticias. */
+/** Página informativa (legal, sobre mí…) con el mismo formato de texto que las recetas. */
 export function InfoPage({ title, updated, children }: { title: string; updated?: string; children: React.ReactNode }) {
   return (
     <article className="mx-auto max-w-[760px]">

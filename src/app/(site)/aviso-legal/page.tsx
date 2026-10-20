@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { ContactEmail, InfoPage, OwnerField, getSettings } from "@/components/site/InfoPage";
 
 export const revalidate = 300;
@@ -32,11 +31,11 @@ export default async function LegalNoticePage() {
       </ul>
       <h2>Objeto</h2>
       <p>
-        {s.siteName} es un medio digital de información local sobre las Islas Baleares. El acceso es gratuito y se financia con publicidad.
+        {s.siteName} es una web personal de recetas de cocina. El acceso es gratuito y se financia con publicidad.
       </p>
       <h2>Propiedad intelectual</h2>
       <p>
-        Los textos publicados son propiedad del titular, salvo que se indique otra autoría. Se permite citarlos con enlace a la noticia original. Las
+        Los textos publicados son propiedad del titular, salvo que se indique otra autoría. Se permite citarlos con enlace a la receta original. Las
         fotografías indican en cada caso su autor y licencia; las de terceros se usan conforme a su licencia o con permiso de quien las difunde.
       </p>
       <p>
@@ -45,8 +44,8 @@ export default async function LegalNoticePage() {
       </p>
       <h2>Responsabilidad</h2>
       <p>
-        Trabajamos para que la información sea veraz y esté actualizada, y corregimos los errores en cuanto los detectamos (ver{" "}
-        <Link href="/normas-editoriales">normas editoriales</Link>). No nos hacemos responsables del contenido de las webs externas enlazadas.
+        Las recetas se publican con la mayor atención posible, pero cada persona debe tener en cuenta sus alergias, intolerancias y las normas
+        básicas de higiene y seguridad en la cocina. No me hago responsable del contenido de las webs externas enlazadas.
       </p>
       <h2>Legislación aplicable</h2>
       <p>Este aviso se rige por la legislación española.</p>
