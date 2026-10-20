@@ -9,7 +9,7 @@ export function LoginForm() {
     <form action={action} className="space-y-4">
       <label className="block space-y-1">
         <span className="text-sm font-medium">Correo</span>
-        <input name="email" type="email" required autoComplete="username" className="field" />
+        <input name="email" type="email" required autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} className="field" />
       </label>
       <label className="block space-y-1">
         <span className="text-sm font-medium">Contraseña</span>
@@ -34,7 +34,7 @@ export function SetupForm({ needsToken }: { needsToken: boolean }) {
       </label>
       <label className="block space-y-1">
         <span className="text-sm font-medium">Correo</span>
-        <input name="email" type="email" required autoComplete="username" className="field" />
+        <input name="email" type="email" required autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} className="field" />
       </label>
       <label className="block space-y-1">
         <span className="text-sm font-medium">Contraseña (mínimo 10 caracteres)</span>
