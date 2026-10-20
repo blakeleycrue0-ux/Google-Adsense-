@@ -7,6 +7,9 @@ const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
 ];
 
+// Las fotos guardadas en Supabase se sirven desde su dominio y pasan por el optimizador de imágenes.
+const supabaseHost = process.env.SUPABASE_URL ? new URL(process.env.SUPABASE_URL).hostname : undefined;
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   turbopack: {
@@ -16,6 +19,7 @@ const nextConfig: NextConfig = {
   },
   images: {
     formats: ["image/avif", "image/webp"],
+    remotePatterns: supabaseHost ? [{ protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/media/**" }] : [],
   },
   experimental: {
     // Las fotos se reducen en el navegador antes de subirlas; esto es margen.

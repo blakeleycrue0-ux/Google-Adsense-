@@ -171,7 +171,7 @@ export async function startAiDraft(input: { notes: string; island: string; secti
   const payload = { notes, island: input.island, section: input.section };
 
   const base = process.env.URL;
-  if (base && db().kind === "netlify-blobs") {
+  if (base && db().kind !== "file") {
     const id = newId("ai_");
     const res = await fetch(`${base.replace(/\/$/, "")}/.netlify/functions/ai-draft-background`, {
       method: "POST",

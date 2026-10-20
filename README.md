@@ -4,7 +4,7 @@
 
 Diario digital de noticias de Mallorca, Menorca, Ibiza y Formentera, preparado para Google AdSense. Tiene un panel privado para escribir noticias desde el móvil, con foto y un asistente de redacción con IA.
 
-**Tecnología:** Next.js 16 · Tailwind CSS 4 · Netlify (con Netlify Blobs para guardar noticias y fotos, sin bases de datos externas) · Claude (asistente opcional).
+**Tecnología:** Next.js 16 · Tailwind CSS 4 · Netlify · Supabase (noticias, ajustes y fotos; sin Supabase se usa Netlify Blobs) · Claude (asistente opcional).
 
 ## Qué incluye
 
@@ -20,12 +20,15 @@ Diario digital de noticias de Mallorca, Menorca, Ibiza y Formentera, preparado p
 
 ## Publicar en Netlify
 
-1. En Netlify, conecta este repositorio. El archivo `netlify.toml` ya contiene la configuración de compilación.
-2. En **Site configuration → Environment variables**, crea estas variables (para todos los ámbitos):
+1. **Supabase:** abre tu proyecto → **SQL Editor**, pega el contenido de [`supabase/schema.sql`](supabase/schema.sql) y pulsa **Run**. Así se crean la tabla de noticias y el bucket público `media` para las fotos.
+2. En Netlify, conecta este repositorio. El archivo `netlify.toml` ya contiene la configuración de compilación.
+3. En **Site configuration → Environment variables**, crea estas variables (para todos los ámbitos):
+   - `SUPABASE_URL`: `https://moailacnffcohjbsfoyd.supabase.co`
+   - `SUPABASE_SERVICE_ROLE_KEY`: en Supabase → **Project Settings → API Keys**, la clave `service_role` (o la *secret key*). Es secreta: no la pegues en ningún otro sitio.
    - `SESSION_SECRET` y `STORE_SECRET`: dos textos aleatorios largos, de 40 caracteres o más.
    - `ADMIN_EMAIL` y `ADMIN_PASSWORD`: tu cuenta del panel.
    - `ANTHROPIC_API_KEY` (opcional): activa el asistente de IA.
-3. Despliega la web, entra en `https://tu-web/admin` y completa **Ajustes**: nombre, titular, NIF, domicilio y correo.
+4. Despliega la web, entra en `https://tu-web/admin` y completa **Ajustes**: nombre, titular, NIF, domicilio y correo.
 
 ## Fotos reales sin problemas de derechos
 
@@ -56,7 +59,7 @@ npm run dev        # http://localhost:3000 (en /admin se crea la primera cuenta)
 npm run typecheck && npm run lint && npm test
 ```
 
-Sin Netlify, los datos se guardan en `./data`.
+Sin Supabase ni Netlify, los datos se guardan en `./data`.
 
 ## Estructura
 
