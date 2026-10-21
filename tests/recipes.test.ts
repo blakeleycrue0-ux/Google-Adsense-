@@ -74,7 +74,7 @@ describe("recetas iniciales", () => {
     const { slugify } = await import("@/lib/format");
     const { isCategory } = await import("@/lib/site");
     const photo: Photo = { url: "/u/a.webp", width: 1, height: 1, alt: "", license: "own", author: "" };
-    expect(SEED_RECIPES.length).toBeGreaterThanOrEqual(30);
+    expect(SEED_RECIPES.length).toBeGreaterThanOrEqual(40);
     expect(new Set(SEED_RECIPES.map((r) => slugify(r.title))).size).toBe(SEED_RECIPES.length);
     for (const r of SEED_RECIPES) {
       expect(publishProblems({ ...r, photo }), r.title).toEqual([]);

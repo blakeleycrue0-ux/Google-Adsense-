@@ -54,7 +54,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
       {pendingSeeds > 0 && (
         <section className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-paper p-4">
           <p className="text-sm text-ink-2">
-            <strong className="text-ink">{pendingSeeds} recetas clásicas listas</strong> (tortilla, paella, lentejas, flan…). Se añaden como privadas y
+            <strong className="text-ink">{pendingSeeds} recetas listas</strong> (brownies, cinnamon rolls, tarta de queso, tortilla, paella…). Se añaden como privadas y
             sin foto: tú les pones la foto y las publicas.
           </p>
           <form action={importSeedRecipes}>
