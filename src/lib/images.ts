@@ -14,7 +14,11 @@ const MIN_WIDTH = 600;
 export async function storePhoto(file: File) {
   if (!file.type.startsWith("image/")) throw new Error("El archivo no es una imagen.");
   if (file.size > MAX_BYTES) throw new Error("La foto pesa demasiado (máximo 12 MB).");
-  const input = Buffer.from(await file.arrayBuffer());
+  return storeImage(Buffer.from(await file.arrayBuffer()), file.name);
+}
+
+export async function storeImage(input: Buffer, name: string) {
+  if (input.length > MAX_BYTES) throw new Error("La foto pesa demasiado (máximo 12 MB).");
   const meta = await sharp(input, { limitInputPixels: MAX_PIXELS })
     .metadata()
     .catch(() => null);
@@ -29,7 +33,7 @@ export async function storePhoto(file: File) {
     .webp({ quality: 82 })
     .toBuffer({ resolveWithObject: true });
   const now = new Date();
-  const base = slugify(file.name.replace(/\.[^.]+$/, "")).slice(0, 50) || "foto";
+  const base = slugify(name.replace(/\.[^.]+$/, "")).slice(0, 50) || "foto";
   const path = `${now.getUTCFullYear()}/${String(now.getUTCMonth() + 1).padStart(2, "0")}/${base}-${newId().slice(0, 6)}.webp`;
   const url = await db().uploadFile(path, data, "image/webp");
   return { url, path, width: info.width, height: info.height };

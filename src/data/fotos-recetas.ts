@@ -1,0 +1,57 @@
+import { slugify } from "@/lib/format";
+
+/**
+ * Qué buscar en Wikimedia Commons para la foto de cada receta inicial (por
+ * título). Son los nombres con los que el plato suele estar fotografiado allí.
+ */
+const BY_TITLE: Record<string, string> = {
+  "Tortilla de patatas jugosa": "tortilla de patatas",
+  "Salmorejo cordobés": "salmorejo",
+  "Croquetas caseras de jamón": "croquetas de jamón",
+  "Patatas bravas con salsa brava casera": "patatas bravas",
+  "Paella mixta de pollo y marisco": "paella mixta",
+  "Arroz con pollo meloso": "arroz con pollo",
+  "Espaguetis carbonara (la receta original)": "spaghetti alla carbonara",
+  "Fideuá con alioli": "fideuà",
+  "Lentejas estofadas con chorizo": "lentejas con chorizo",
+  "Cocido madrileño": "cocido madrileño",
+  "Crema de calabaza": "pumpkin soup",
+  "Sopa de ajo castellana": "sopa de ajo",
+  "Pollo al ajillo": "pollo al ajillo",
+  "Albóndigas en salsa": "albóndigas en salsa",
+  "Solomillo de cerdo a la mostaza": "pork tenderloin",
+  "Carrillada de cerdo al vino tinto": "carrilleras",
+  "Merluza en salsa verde": "merluza en salsa verde",
+  "Gambas al ajillo": "gambas al ajillo",
+  "Salmón al horno con verduras": "baked salmon",
+  "Pisto manchego": "pisto manchego",
+  "Berenjenas rellenas de carne": "berenjenas rellenas",
+  "Espinacas a la catalana": "espinacas a la catalana",
+  "Salsa de tomate casera": "tomato sauce",
+  "Alioli tradicional y alioli rápido": "allioli",
+  "Caldo de pollo casero": "chicken broth",
+  "Pan casero fácil sin amasar": "no-knead bread",
+  "Masa de empanada gallega": "empanada gallega",
+  "Flan de huevo casero": "flan de huevo",
+  "Arroz con leche asturiano": "arroz con leche",
+  "Bizcocho de yogur": "bizcocho de yogur",
+  "Torrijas de leche": "torrijas",
+  "Brownies de chocolate": "chocolate brownies",
+  "Cinnamon rolls (rollos de canela)": "cinnamon rolls",
+  "Cookies con pepitas de chocolate": "chocolate chip cookies",
+  "Tarta de queso al horno cremosa": "basque cheesecake",
+  "Banana bread": "banana bread",
+  "Tortitas americanas (pancakes)": "pancakes",
+  "Tiramisú": "tiramisu",
+  "Carrot cake con frosting de queso": "carrot cake",
+  "Muffins de arándanos": "blueberry muffins",
+  "Crepes dulces": "crêpes",
+  "Coulant de chocolate": "chocolate lava cake",
+  "Natillas caseras": "natillas",
+  "Tarta de tres chocolates": "tarta de tres chocolates",
+  "Lasaña de carne": "lasagne",
+  "Masa de pizza casera": "pizza margherita",
+  "Hummus de garbanzos": "hummus",
+};
+
+export const PHOTO_QUERIES: Record<string, string> = Object.fromEntries(Object.entries(BY_TITLE).map(([t, q]) => [slugify(t), q]));

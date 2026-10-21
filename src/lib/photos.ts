@@ -30,3 +30,13 @@ export function creditError(license: string, author: string): string | null {
   }
   return null;
 }
+
+/** Traduce la licencia de Wikimedia Commons («CC BY-SA 4.0», «Public domain»…) a la nuestra; null si no es libre. */
+export function commonsLicense(name: string): PhotoLicense | null {
+  const n = name.trim().toLowerCase();
+  if (n === "cc0" || n.startsWith("cc0 ") || n.startsWith("public domain") || n === "pd") return "cc0";
+  if (/\bnc\b|\bnd\b/.test(n)) return null;
+  if (/^cc[ -]by[ -]sa\b/.test(n)) return "cc-by-sa";
+  if (/^cc[ -]by\b/.test(n)) return "cc-by";
+  return null;
+}

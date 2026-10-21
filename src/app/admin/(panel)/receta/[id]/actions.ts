@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/auth";
 import { getRecipe, listRecipes } from "@/lib/content";
 import { storeSecret } from "@/lib/db/blobs-adapter";
 import { db, newId } from "@/lib/db";
+import { findFreePhoto } from "@/lib/free-photos";
 import { storePhoto } from "@/lib/images";
 import { creditError } from "@/lib/photos";
 import { parseLines, parseTags, publishProblems, uniqueSlug } from "@/lib/recipes";
@@ -140,6 +141,20 @@ export async function uploadPhoto(form: FormData): Promise<UploadResult> {
   if (!(file instanceof File) || !file.size) return { ok: false, error: "Selecciona una foto." };
   try {
     return { ok: true, ...(await storePhoto(file)) };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+export type FreePhotoResult = { ok: true; photo: Photo } | { ok: false; error: string };
+
+/** Busca una foto libre para el plato; `exclude` son las ya propuestas, para dar otra distinta. */
+export async function suggestFreePhoto(title: string, exclude: string[]): Promise<FreePhotoResult> {
+  await requireUser();
+  if (title.trim().length < 3) return { ok: false, error: "Escribe primero el nombre de la receta." };
+  try {
+    const photo = await findFreePhoto(title.trim().slice(0, 140), exclude.slice(0, 50));
+    return photo ? { ok: true, photo } : { ok: false, error: "No he encontrado (más) fotos libres para este plato. Sube una tuya." };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }

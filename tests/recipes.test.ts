@@ -83,3 +83,23 @@ describe("recetas iniciales", () => {
     }
   });
 });
+
+describe("fotos libres", () => {
+  it("cada receta inicial tiene búsqueda de foto preparada", async () => {
+    const { SEED_RECIPES } = await import("@/data/recetas-iniciales");
+    const { PHOTO_QUERIES } = await import("@/data/fotos-recetas");
+    const { slugify } = await import("@/lib/format");
+    const missing = SEED_RECIPES.filter((r) => !PHOTO_QUERIES[slugify(r.title)]).map((r) => r.title);
+    expect(missing).toEqual([]);
+  });
+
+  it("solo acepta licencias libres de Commons", async () => {
+    const { commonsLicense } = await import("@/lib/photos");
+    expect(commonsLicense("CC BY-SA 4.0")).toBe("cc-by-sa");
+    expect(commonsLicense("CC BY 2.0")).toBe("cc-by");
+    expect(commonsLicense("CC0")).toBe("cc0");
+    expect(commonsLicense("Public domain")).toBe("cc0");
+    expect(commonsLicense("CC BY-NC 2.0")).toBeNull();
+    expect(commonsLicense("GFDL")).toBeNull();
+  });
+});

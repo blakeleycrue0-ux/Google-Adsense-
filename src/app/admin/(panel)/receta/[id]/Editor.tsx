@@ -4,7 +4,7 @@ import { useActionState, useRef, useState, useTransition } from "react";
 import { photoCredit } from "@/lib/photos";
 import { CATEGORIES, DIFFICULTIES, PHOTO_LICENSES, type PhotoLicense } from "@/lib/site";
 import type { Recipe } from "@/lib/types";
-import { checkAiDraft, saveRecipe, startAiDraft, uploadPhoto, type AiResult } from "./actions";
+import { checkAiDraft, saveRecipe, startAiDraft, suggestFreePhoto, uploadPhoto, type AiResult } from "./actions";
 
 type UploadedPhoto = { url: string; path: string; width: number; height: number };
 
@@ -49,6 +49,9 @@ export function Editor({ recipe, defaultAuthor, aiEnabled, flash }: { recipe: Re
   );
   const [license, setLicense] = useState<PhotoLicense>(recipe?.photo?.license ?? "own");
   const [author, setAuthor] = useState(recipe?.photo?.author ?? "");
+  const [sourceUrl, setSourceUrl] = useState(recipe?.photo?.sourceUrl ?? "");
+  const [tried, setTried] = useState<string[]>(recipe?.photo?.sourceUrl ? [recipe.photo.sourceUrl] : []);
+  const [searching, setSearching] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [uploading, startUpload] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -73,6 +76,20 @@ export function Editor({ recipe, defaultAuthor, aiEnabled, flash }: { recipe: Re
       else setUploadError(res.error);
       if (fileRef.current) fileRef.current.value = "";
     });
+  }
+
+  async function findPhoto() {
+    setUploadError("");
+    setSearching(true);
+    const res = await suggestFreePhoto(title, tried).catch((e: Error) => ({ ok: false as const, error: e.message }));
+    setSearching(false);
+    if (!res.ok) return setUploadError(res.error);
+    const p = res.photo;
+    setPhoto({ url: p.url, path: p.path ?? "", width: p.width, height: p.height });
+    setLicense(p.license);
+    setAuthor(p.author);
+    setSourceUrl(p.sourceUrl ?? "");
+    if (p.sourceUrl) setTried((t) => [...t, p.sourceUrl!]);
   }
 
   async function runAi() {
@@ -252,6 +269,9 @@ export function Editor({ recipe, defaultAuthor, aiEnabled, flash }: { recipe: Re
                 <button type="button" onClick={() => fileRef.current?.click()} className="btn btn-ghost flex-1 text-sm">
                   Cambiar
                 </button>
+                <button type="button" onClick={findPhoto} disabled={searching} className="btn btn-ghost flex-1 text-sm">
+                  {searching ? "Buscando…" : "Otra foto libre"}
+                </button>
                 <button type="button" onClick={() => setPhoto(null)} className="btn btn-ghost flex-1 text-sm">
                   Quitar
                 </button>
@@ -265,6 +285,11 @@ export function Editor({ recipe, defaultAuthor, aiEnabled, flash }: { recipe: Re
               className="grid aspect-[4/3] w-full place-items-center rounded border-2 border-dashed border-line text-sm text-muted hover:border-ink hover:text-ink"
             >
               {uploading ? "Subiendo…" : "📷 Hacer o subir foto"}
+            </button>
+          )}
+          {!photo && (
+            <button type="button" onClick={findPhoto} disabled={searching} className="btn btn-ghost w-full text-sm">
+              {searching ? "Buscando foto libre…" : "🔎 Buscar una foto libre (Wikimedia Commons)"}
             </button>
           )}
           <input ref={fileRef} type="file" accept="image/*" onChange={onFile} className="hidden" />
@@ -298,7 +323,7 @@ export function Editor({ recipe, defaultAuthor, aiEnabled, flash }: { recipe: Re
                 </label>
                 <label className="block space-y-1">
                   <span className="text-sm">Enlace al original (opcional)</span>
-                  <input name="photoSourceUrl" type="url" defaultValue={recipe?.photo?.sourceUrl} placeholder="https://…" className="field" />
+                  <input name="photoSourceUrl" type="url" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://…" className="field" />
                 </label>
               </>
             )}

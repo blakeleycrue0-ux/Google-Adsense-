@@ -3,10 +3,12 @@
 import { redirect } from "next/navigation";
 import { SEED_RECIPES } from "@/data/recetas-iniciales";
 import { requireUser } from "@/lib/auth";
-import { listRecipes } from "@/lib/content";
+import { getRecipe, listRecipes } from "@/lib/content";
 import { db, newId } from "@/lib/db";
 import { slugify } from "@/lib/format";
-import { uniqueSlug } from "@/lib/recipes";
+import { findFreePhoto } from "@/lib/free-photos";
+import { publishProblems, uniqueSlug } from "@/lib/recipes";
+import { revalidateSite } from "@/lib/revalidate";
 import type { Recipe } from "@/lib/types";
 
 /**
@@ -31,4 +33,34 @@ export async function importSeedRecipes() {
     await Promise.all(toAdd.slice(i, i + 8).map((r) => db().put("recipes", r)));
   }
   redirect(`/admin?ver=privadas&importadas=${toAdd.length}`);
+}
+
+export type AutoPhotoResult = { ok: true; published: boolean } | { ok: false; error: string };
+
+/**
+ * Pone a una receta sin foto una foto libre de Wikimedia Commons y, si se pide
+ * y ya está completa, la publica. El panel la llama receta a receta para no
+ * pasarse del límite de tiempo de Netlify.
+ */
+export async function autoPhoto(id: string, publish: boolean): Promise<AutoPhotoResult> {
+  await requireUser();
+  const recipe = await getRecipe(id);
+  if (!recipe) return { ok: false, error: "La receta ya no existe." };
+  if (recipe.photo) return { ok: true, published: recipe.status === "published" };
+  let photo;
+  try {
+    photo = await findFreePhoto(recipe.title);
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+  if (!photo) return { ok: false, error: "No he encontrado ninguna foto libre adecuada." };
+  const now = new Date().toISOString();
+  const updated = { ...recipe, photo, updatedAt: now };
+  if (publish && recipe.status === "private" && !publishProblems(updated).length) {
+    updated.status = "published";
+    updated.publishedAt ??= now;
+  }
+  await db().put("recipes", updated);
+  revalidateSite();
+  return { ok: true, published: updated.status === "published" };
 }
