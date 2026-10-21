@@ -2,13 +2,16 @@
 
 /* ───────────── Tokens ───────────── */
 @theme {
-  /* Blanco, grises y negro. Sin colores de acento en la web pública. */
+  /* Blanco, grises y negro, con un toque de celeste. */
   --color-paper: #ffffff;
-  --color-surface: #f4f4f4;
-  --color-ink: #111111;
-  --color-ink-2: #3d3d3d;
-  --color-muted: #6e6e6e;
-  --color-line: #e3e3e3;
+  --color-surface: #f3f4f6;
+  --color-ink: #141414;
+  --color-ink-2: #44474c;
+  --color-muted: #72767c;
+  --color-line: #e5e7ea;
+  --color-sky: #1d9bf0;
+  --color-sky-ink: #0b6fbf;
+  --color-sky-soft: #eaf5fe;
   /* Nombres heredados: en la web son negro; se usan en enlaces y botones. */
   --color-sea: #111111;
   --color-sea-dark: #000000;
@@ -49,30 +52,36 @@ body {
   }
 }
 
-/* Antetítulo: «MALLORCA · SUCESOS». */
+/* Etiqueta pequeña: «Postres · 45 min». */
 @utility kicker {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
 }
 
-/* Titulares en serif, como un periódico. */
+/* Títulos: sans, compactos y en negrita. */
 @utility headline {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-weight: 700;
-  letter-spacing: -0.01em;
-  line-height: 1.18;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
   text-wrap: balance;
 }
 
-/* Cuerpo de la noticia. */
+/* Fondos de degradado (imágenes en /public/fondos). */
+@utility bg-celeste {
+  background: #2a8cf7 url("/fondos/celeste.webp") center / cover;
+}
+@utility bg-grafito {
+  background:
+    linear-gradient(rgb(20 20 20 / 0.84), rgb(20 20 20 / 0.84)),
+    #141414 url("/fondos/gris.webp") center / cover;
+}
+
+/* Textos largos (consejos, páginas de información). */
 .prose-news {
-  font-family: var(--font-serif);
-  font-size: 1.1875rem;
-  line-height: 1.65;
-  color: #222;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--color-ink-2);
 }
 .prose-news > * + * {
   margin-top: 1.1em;
@@ -93,7 +102,7 @@ body {
   color: var(--color-ink);
 }
 .prose-news a {
-  color: var(--color-sea);
+  color: var(--color-sky-ink);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -106,7 +115,7 @@ body {
   padding-left: 1.4em;
 }
 .prose-news blockquote {
-  border-left: 3px solid var(--color-ink);
+  border-left: 3px solid var(--color-sky);
   padding-left: 1em;
   font-style: italic;
   color: var(--color-ink);
@@ -127,25 +136,11 @@ body {
   text-align: left;
 }
 
-@keyframes pulse-dot {
-  50% {
-    opacity: 0.35;
-  }
-}
-.live-dot {
-  animation: pulse-dot 1.4s ease-in-out infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .live-dot {
-    animation: none;
-  }
-}
-
 /* Formularios del panel. */
 .field {
   width: 100%;
   border: 1px solid var(--color-line);
-  border-radius: 6px;
+  border-radius: 10px;
   background: #fff;
   padding: 0.6rem 0.75rem;
   font-size: 1rem;
@@ -160,8 +155,8 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  border-radius: 6px;
-  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  padding: 0.6rem 1.15rem;
   font-weight: 600;
   font-size: 0.95rem;
   transition: background-color 0.15s;

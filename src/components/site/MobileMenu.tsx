@@ -37,7 +37,7 @@ export function MobileMenu() {
       </button>
 
       {open && (
-        <div className="fixed inset-x-0 bottom-0 top-14 z-50 overflow-y-auto bg-paper">
+        <div className="fixed inset-x-0 bottom-0 top-16 z-50 overflow-y-auto bg-paper">
           {/* Se cierra al pulsar cualquier enlace. */}
           <nav
             className="container-x space-y-8 py-6"
@@ -61,7 +61,7 @@ export function MobileMenu() {
 function MenuGroup({ title, items, small }: { title: string; items: { href: string; label: string }[]; small?: boolean }) {
   return (
     <div>
-      <p className="kicker mb-2 border-b border-ink pb-2 text-muted">{title}</p>
+      <p className="mb-2 border-b border-line pb-2 text-xs font-semibold uppercase tracking-wide text-muted">{title}</p>
       <ul className="grid grid-cols-2 gap-x-4">
         {items.map((i) => (
           <li key={i.href}>

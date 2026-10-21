@@ -26,6 +26,7 @@ const schema = z.object({
   slotHome: optionalSlot,
   slotArticle: optionalSlot,
   searchConsoleVerification: z.string().trim().max(100),
+  pexelsKey: z.string().trim().max(200).optional(),
 });
 
 export async function saveSettings(_: FormState, form: FormData): Promise<FormState> {
@@ -51,6 +52,8 @@ export async function saveSettings(_: FormState, form: FormData): Promise<FormSt
       adsEnabled: Boolean(d.adsEnabled) && Boolean(d.adsenseClient),
       slots: { home: d.slotHome, article: d.slotArticle },
       // Acepta la etiqueta <meta> completa o solo el código.
+      // Vacío = se deja la clave que ya había (el campo no la muestra).
+      pexelsKey: d.pexelsKey || current.pexelsKey,
       searchConsoleVerification: d.searchConsoleVerification.match(/content="([^"]+)"/)?.[1] ?? d.searchConsoleVerification,
     });
   } catch (e) {

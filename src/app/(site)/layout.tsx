@@ -12,7 +12,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       {adsActive(s) && (
         <script async src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${s.adsenseClient}`} crossOrigin="anonymous" />
       )}
-      <Header siteName={s.siteName} tagline={s.tagline} />
+      <Header siteName={s.siteName} />
       <main className="container-x py-5 sm:py-8">{children}</main>
       <Footer s={s} />
     </>

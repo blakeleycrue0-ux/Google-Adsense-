@@ -93,13 +93,9 @@ describe("fotos libres", () => {
     expect(missing).toEqual([]);
   });
 
-  it("solo acepta licencias libres de Commons", async () => {
-    const { commonsLicense } = await import("@/lib/photos");
-    expect(commonsLicense("CC BY-SA 4.0")).toBe("cc-by-sa");
-    expect(commonsLicense("CC BY 2.0")).toBe("cc-by");
-    expect(commonsLicense("CC0")).toBe("cc0");
-    expect(commonsLicense("Public domain")).toBe("cc0");
-    expect(commonsLicense("CC BY-NC 2.0")).toBeNull();
-    expect(commonsLicense("GFDL")).toBeNull();
+  it("prefiere fotos luminosas y las más relevantes", async () => {
+    const { brightScore } = await import("@/lib/free-photos-score");
+    expect(brightScore("#f2f0ec", 0)).toBeGreaterThan(brightScore("#2a1d14", 0));
+    expect(brightScore("#f2f0ec", 0)).toBeGreaterThan(brightScore("#f2f0ec", 5));
   });
 });

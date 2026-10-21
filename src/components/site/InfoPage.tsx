@@ -5,7 +5,7 @@ import type { Settings } from "@/lib/types";
 export function InfoPage({ title, updated, children }: { title: string; updated?: string; children: React.ReactNode }) {
   return (
     <article className="mx-auto max-w-[760px]">
-      <h1 className="headline border-b-2 border-ink pb-4 text-3xl sm:text-4xl">{title}</h1>
+      <h1 className="headline text-[2rem] sm:text-5xl">{title}</h1>
       <div className="prose-news mt-8">{children}</div>
       {updated && <p className="mt-10 text-sm text-muted">Última actualización: {updated}</p>}
     </article>

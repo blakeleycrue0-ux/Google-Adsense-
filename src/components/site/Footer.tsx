@@ -16,9 +16,12 @@ export function Footer({ s }: { s: Settings }) {
     s.tiktok && { href: `https://www.tiktok.com/@${s.tiktok.replace(/^@/, "")}`, label: "TikTok" },
   ].filter(Boolean) as { href: string; label: string }[];
   return (
-    <footer className="mt-16 bg-ink text-white/75 print:hidden">
-      <div className="container-x py-10">
-        <p className="headline text-3xl text-white">{s.siteName}</p>
+    <footer className="bg-grafito mt-20 text-white/75 print:hidden">
+      <div className="container-x py-12">
+        <p className="flex items-center gap-2 text-2xl font-bold tracking-tight text-white">
+          <span className="bg-celeste size-3 rounded-full" aria-hidden />
+          {s.siteName}
+        </p>
         <p className="mt-1 text-sm">{s.tagline}</p>
         {social.length > 0 && (
           <p className="mt-3 flex gap-4 text-sm">
@@ -34,7 +37,7 @@ export function Footer({ s }: { s: Settings }) {
           <FooterList title="Información" items={LEGAL} />
         </div>
       </div>
-      <div className="border-t border-white/15">
+      <div className="border-t border-white/10">
         <div className="container-x flex flex-wrap items-center justify-between gap-2 py-5 text-xs text-white/55">
           <p>
             © {new Date().getFullYear()} {s.siteName}
@@ -51,7 +54,7 @@ export function Footer({ s }: { s: Settings }) {
 function FooterList({ title, items }: { title: string; items: { href: string; label: string }[] }) {
   return (
     <nav aria-label={title}>
-      <p className="kicker mb-3 text-white">{title}</p>
+      <p className="mb-3 text-sm font-semibold text-white">{title}</p>
       <ul className="space-y-0.5 text-sm">
         {items.map((i) => (
           <li key={i.href}>

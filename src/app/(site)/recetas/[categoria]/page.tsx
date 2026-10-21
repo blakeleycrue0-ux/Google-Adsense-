@@ -22,5 +22,5 @@ export default async function CategoryPage({ params }: PageProps<"/recetas/[cate
   const { categoria } = await params;
   if (!isCategory(categoria)) notFound();
   const c = CATEGORIES.find((x) => x.id === categoria)!;
-  return <RecipeList title={c.name} intro={c.description} current={c.id} recipes={await getByCategory(c.id)} empty="Aún no hay recetas en esta categoría." />;
+  return <RecipeList title={c.name} intro={c.description} recipes={await getByCategory(c.id)} empty="Aún no hay recetas en esta categoría." />;
 }

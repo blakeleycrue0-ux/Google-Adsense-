@@ -53,6 +53,25 @@ export function SettingsForm({ s }: { s: Settings }) {
         <Field label="TikTok (usuario)" name="tiktok" defaultValue={s.tiktok} placeholder="tu_usuario" />
       </Card>
 
+      <Card title="Fotos">
+        <Field
+          label={s.pexelsKey ? "Clave de Pexels (guardada ✔)" : "Clave de Pexels"}
+          name="pexelsKey"
+          type="password"
+          autoComplete="off"
+          placeholder={s.pexelsKey ? "•••••••• (escribe otra solo para cambiarla)" : "Pega aquí tu clave"}
+          hint={
+            <>
+              Gratis: entra en{" "}
+              <a href="https://www.pexels.com/api/new/" target="_blank" rel="noopener noreferrer" className="underline">
+                pexels.com/api
+              </a>
+              , crea la cuenta, rellena el formulario y copia «Your API Key». Con ella el panel pone fotos profesionales a las recetas.
+            </>
+          }
+        />
+      </Card>
+
       <Card title="Titular (aviso legal)">
         <p className="text-sm text-ink-2">La ley (LSSI) obliga a mostrar quién está detrás de la web. AdSense también lo revisa.</p>
         <Field label="Nombre y apellidos o empresa" name="ownerName" defaultValue={s.ownerName} />

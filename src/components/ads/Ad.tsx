@@ -12,7 +12,7 @@ export async function Ad({ slot, className = "" }: { slot: "home" | "article"; c
   if (!adsActive(s) || !/^\d{6,20}$/.test(slotId)) return null;
   return (
     <aside aria-label="Publicidad" className={className}>
-      <p className="kicker mb-2 text-center text-muted">Publicidad</p>
+      <p className="mb-2 text-center text-[11px] text-muted">Publicidad</p>
       <AdSlotClient client={s.adsenseClient} slotId={slotId} inArticle={slot === "article"} />
     </aside>
   );

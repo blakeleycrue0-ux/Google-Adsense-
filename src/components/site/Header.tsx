@@ -4,70 +4,61 @@ import { MobileMenu } from "./MobileMenu";
 
 export function Logo({ name, className = "" }: { name: string; className?: string }) {
   return (
-    <Link href="/" className={`headline whitespace-nowrap tracking-tight ${className}`} aria-label={`${name}, inicio`}>
-      {name}
+    <Link href="/" className={`flex items-center gap-2 whitespace-nowrap font-bold tracking-tight ${className}`} aria-label={`${name}, inicio`}>
+      <span className="bg-celeste size-3 shrink-0 rounded-full" aria-hidden />
+      <span className="truncate">{name}</span>
     </Link>
   );
 }
 
-const SearchIcon = () => (
-  <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+export const SearchIcon = ({ className = "size-5" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
     <circle cx="11" cy="11" r="7" />
     <path d="m20 20-3.5-3.5" />
   </svg>
 );
 
-/**
- * Móvil: barra fija (menú · nombre · buscar). Escritorio: nombre centrado y
- * una fila con las categorías.
- */
-export function Header({ siteName, tagline }: { siteName: string; tagline: string }) {
-  return (
-    <>
-      {/* Móvil y tableta */}
-      <header className="sticky top-0 z-40 border-b border-line bg-paper lg:hidden print:hidden">
-        <div className="container-x flex h-14 items-center justify-between">
-          <MobileMenu />
-          <Logo name={siteName} className="min-w-0 truncate px-2 text-[1.35rem] sm:text-[1.6rem]" />
-          <Link href="/buscar" className="-mr-2 grid size-11 place-items-center rounded-md hover:bg-surface" aria-label="Buscar recetas">
-            <SearchIcon />
-          </Link>
-        </div>
-      </header>
+const NAV = [
+  { href: "/recetas", label: "Recetas" },
+  { href: "/recetas/postres", label: "Postres" },
+  { href: "/sobre-mi", label: "Sobre mí" },
+];
 
-      {/* Escritorio */}
-      <header className="hidden border-b border-line lg:block print:hidden">
-        <div className="container-x grid grid-cols-[1fr_auto_1fr] items-center gap-6 pb-5 pt-6">
-          <nav aria-label="Principal" className="flex gap-5 text-sm font-semibold">
-            <Link href="/recetas" className="hover:underline">
-              Todas las recetas
-            </Link>
-            <Link href="/sobre-mi" className="hover:underline">
-              Sobre mí
-            </Link>
-          </nav>
-          <div className="text-center">
-            <Logo name={siteName} className="text-5xl" />
-            <p className="mt-1.5 text-sm text-muted">{tagline}</p>
-          </div>
-          <div className="flex justify-end">
-            <Link href="/buscar" className="btn btn-ghost gap-2 px-3 text-sm">
-              <SearchIcon /> Buscar
-            </Link>
-          </div>
+/** Barra fija con el nombre, el buscador y, debajo, las categorías deslizables. */
+export function Header({ siteName }: { siteName: string }) {
+  return (
+    <header className="sticky top-0 z-40 border-b border-line bg-paper print:hidden">
+      <div className="container-x flex h-16 items-center gap-2">
+        <div className="lg:hidden">
+          <MobileMenu />
         </div>
-        <nav aria-label="Categorías" className="border-y border-ink">
-          <ul className="container-x flex flex-wrap items-center justify-center text-[13px] font-semibold">
-            {CATEGORIES.map((c) => (
-              <li key={c.id}>
-                <Link href={`/recetas/${c.id}`} className="block px-3 py-3 hover:bg-surface">
-                  {c.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
+        <Logo name={siteName} className="min-w-0 text-lg sm:text-xl" />
+        <nav aria-label="Principal" className="ml-8 hidden gap-6 text-sm font-medium text-ink-2 lg:flex">
+          {NAV.map((n) => (
+            <Link key={n.href} href={n.href} className="hover:text-ink">
+              {n.label}
+            </Link>
+          ))}
         </nav>
-      </header>
-    </>
+        <form action="/buscar" role="search" className="ml-auto hidden w-72 items-center gap-2 rounded-full bg-surface px-4 sm:flex">
+          <SearchIcon className="size-4 shrink-0 text-muted" />
+          <input name="q" placeholder="Buscar receta o ingrediente" aria-label="Buscar recetas" className="h-10 min-w-0 flex-1 bg-transparent text-sm outline-none" />
+        </form>
+        <Link href="/buscar" className="-mr-2 ml-auto grid size-11 place-items-center rounded-full hover:bg-surface sm:hidden" aria-label="Buscar recetas">
+          <SearchIcon />
+        </Link>
+      </div>
+      <nav aria-label="Categorías" className="no-scrollbar overflow-x-auto">
+        <ul className="container-x flex gap-2 pb-3 text-[13px] font-medium">
+          {CATEGORIES.map((c) => (
+            <li key={c.id} className="shrink-0">
+              <Link href={`/recetas/${c.id}`} className="block rounded-full bg-surface px-3.5 py-1.5 text-ink-2 hover:bg-ink hover:text-white">
+                {c.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </header>
   );
 }

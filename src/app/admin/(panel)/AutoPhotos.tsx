@@ -6,8 +6,8 @@ import { autoPhoto } from "./actions";
 
 type Item = { id: string; title: string };
 
-/** Pone fotos libres (Wikimedia Commons) a las recetas privadas sin foto, de dos en dos. */
-export function AutoPhotos({ items }: { items: Item[] }) {
+/** Pone fotos profesionales (Pexels) a las recetas sin foto, de dos en dos. */
+export function AutoPhotos({ items, hasKey }: { items: Item[]; hasKey: boolean }) {
   const router = useRouter();
   const [publish, setPublish] = useState(true);
   const [running, setRunning] = useState(false);
@@ -38,16 +38,24 @@ export function AutoPhotos({ items }: { items: Item[] }) {
     <section className="space-y-3 rounded-lg border border-line bg-paper p-4">
       <p className="text-sm text-ink-2">
         <strong className="text-ink">
-          📷 {items.length} {items.length === 1 ? "receta privada sin foto" : "recetas privadas sin foto"}.
+          📷 {items.length} {items.length === 1 ? "receta necesita foto" : "recetas necesitan foto"}.
         </strong>{" "}
-        Les busco una foto con licencia libre en Wikimedia Commons (con su autor y enlace, como exige la licencia). Luego puedes cambiar la que no te
-        guste desde cada receta.
+        Les busco una foto profesional en Pexels (uso libre, con el nombre del fotógrafo). Si alguna no te gusta, ábrela y pulsa «Otra foto».
       </p>
+      {!hasKey && (
+        <p className="rounded-md bg-surface p-3 text-sm">
+          Antes, pega tu clave gratuita de Pexels en{" "}
+          <a href="/admin/ajustes" className="font-semibold underline">
+            Ajustes → Fotos
+          </a>
+          .
+        </p>
+      )}
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={publish} onChange={(e) => setPublish(e.target.checked)} disabled={running} />
         Publicarlas en cuanto tengan foto
       </label>
-      <button onClick={run} disabled={running} className="btn btn-primary">
+      <button onClick={run} disabled={running || !hasKey} className="btn btn-primary">
         {running ? `Buscando fotos… ${done}/${items.length}` : "Poner fotos automáticamente"}
       </button>
       {!running && done > 0 && (

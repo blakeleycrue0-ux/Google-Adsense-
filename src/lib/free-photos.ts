@@ -1,98 +1,73 @@
 import "server-only";
 import { PHOTO_QUERIES } from "@/data/fotos-recetas";
 import { slugify } from "@/lib/format";
+import { brightScore } from "@/lib/free-photos-score";
 import { storeImage } from "@/lib/images";
-import { commonsLicense } from "@/lib/photos";
-import type { PhotoLicense } from "@/lib/site";
+import { getSettings } from "@/lib/settings";
 import type { Photo } from "@/lib/types";
 
 /**
- * Busca en Wikimedia Commons una foto con licencia libre (CC0, dominio público,
- * CC BY o CC BY-SA), la descarga, la optimiza y la guarda como si se hubiera
- * subido desde el panel, con su autor y el enlace al original para el crédito.
+ * Fotos profesionales de Pexels (licencia libre: uso comercial permitido, sin
+ * pedir permiso). Se descargan, se optimizan y se guardan como las subidas
+ * desde el panel, con el fotógrafo y el enlace al original para el crédito.
+ *
+ * Para que todas las recetas tengan un aire parecido, entre los primeros
+ * resultados se elige la foto más luminosa y limpia (fondo claro, emplatado
+ * sencillo), que encaja con el blanco y gris de la web.
  */
 
-const API = "https://commons.wikimedia.org/w/api.php";
-const USER_AGENT = `LaLibretaDelFogon/1.0 (${process.env.URL ?? "https://lalibretadelfogon.netlify.app"})`;
-// Fotos que no son del plato: carteles, envases, mapas, dibujos…
-const NOT_A_DISH = /logo|map|diagram|icon|drawing|illustration|painting|sign|menu|label|packag|box|advert|poster|stamp|coat of arms|recipe card/i;
+const API = "https://api.pexels.com/v1/search";
+const CANDIDATES = 12;
 
-type CommonsPage = {
-  index: number;
-  title: string;
-  imageinfo?: {
-    thumburl?: string;
-    thumbwidth?: number;
-    thumbheight?: number;
-    mime: string;
-    descriptionurl: string;
-    extmetadata?: Record<string, { value?: string }>;
-  }[];
+type PexelsPhoto = {
+  id: number;
+  width: number;
+  height: number;
+  url: string;
+  photographer: string;
+  alt: string | null;
+  avg_color: string | null;
+  src: { large2x: string };
 };
 
-export type FreePhotoCandidate = { imageUrl: string; sourceUrl: string; license: PhotoLicense; author: string };
-
-function plainText(html: string) {
-  return html
-    .replace(/<[^>]*>/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&#0?39;/g, "'")
-    .replace(/&nbsp;/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 120);
+export async function pexelsKey() {
+  return process.env.PEXELS_API_KEY?.trim() || (await getSettings()).pexelsKey.trim();
 }
 
-async function search(query: string): Promise<FreePhotoCandidate[]> {
-  const params = new URLSearchParams({
-    action: "query",
-    format: "json",
-    formatversion: "2",
-    generator: "search",
-    gsrsearch: `${query} filetype:bitmap`,
-    gsrnamespace: "6",
-    gsrlimit: "25",
-    prop: "imageinfo",
-    iiprop: "url|mime|extmetadata",
-    iiextmetadatafilter: "LicenseShortName|Artist",
-    iiurlwidth: "1280",
-  });
-  const res = await fetch(`${API}?${params}`, { headers: { "User-Agent": USER_AGENT }, cache: "no-store", signal: AbortSignal.timeout(10_000) });
-  if (!res.ok) throw new Error(`Wikimedia Commons respondió ${res.status}.`);
-  const pages: CommonsPage[] = (await res.json()).query?.pages ?? [];
-  return pages
-    .sort((a, b) => a.index - b.index)
-    .flatMap((p) => {
-      const info = p.imageinfo?.[0];
-      if (!info?.thumburl || !info.thumbwidth || !info.thumbheight) return [];
-      if (!/^image\/(jpeg|png|webp)$/.test(info.mime) || NOT_A_DISH.test(p.title)) return [];
-      // Horizontales o casi cuadradas y con tamaño suficiente para la portada.
-      const ratio = info.thumbwidth / info.thumbheight;
-      if (info.thumbwidth < 900 || ratio < 1 || ratio > 2) return [];
-      const license = commonsLicense(info.extmetadata?.LicenseShortName?.value ?? "");
-      if (!license) return [];
-      const author = plainText(info.extmetadata?.Artist?.value ?? "");
-      if (license !== "cc0" && !author) return [];
-      return [{ imageUrl: info.thumburl, sourceUrl: info.descriptionurl, license, author }];
-    });
+async function search(key: string, query: string): Promise<PexelsPhoto[]> {
+  const params = new URLSearchParams({ query, orientation: "landscape", size: "large", per_page: String(CANDIDATES) });
+  const res = await fetch(`${API}?${params}`, { headers: { Authorization: key }, cache: "no-store", signal: AbortSignal.timeout(10_000) });
+  if (res.status === 401 || res.status === 403) throw new Error("La clave de Pexels no es válida. Revísala en Ajustes.");
+  if (!res.ok) throw new Error(`Pexels respondió ${res.status}. Prueba de nuevo en unos minutos.`);
+  const photos: PexelsPhoto[] = (await res.json()).photos ?? [];
+  return photos.filter((p) => p.width >= 1200 && p.photographer.trim());
 }
 
-/** Qué se busca para una receta: la búsqueda preparada (recetas iniciales) y, si no da nada, el título. */
+/** Qué se busca para una receta: las búsquedas preparadas (recetas iniciales) y, si no dan nada, el título. */
 export function photoQueries(title: string) {
-  const preset = PHOTO_QUERIES[slugify(title)];
-  return [...new Set([preset, title.replace(/\(.*?\)/g, "").trim()].filter((q): q is string => Boolean(q)))];
+  const preset = PHOTO_QUERIES[slugify(title)] ?? [];
+  return [...new Set([...preset, title.replace(/\(.*?\)/g, "").trim()].filter(Boolean))];
 }
 
-/** Devuelve la primera foto libre que no esté en `exclude` (enlaces a Commons ya probados), ya guardada. */
+/** Sin foto, o con una de las de Wikimedia que se pusieron automáticamente antes: se cambia por una de Pexels. */
+export function needsAutoPhoto(photo: Pick<Photo, "sourceUrl"> | null) {
+  return !photo || Boolean(photo.sourceUrl?.includes("commons.wikimedia.org"));
+}
+
+/** Devuelve la mejor foto que no esté en `exclude` (enlaces ya propuestos), ya guardada. */
 export async function findFreePhoto(title: string, exclude: string[] = []): Promise<Photo | null> {
+  const key = await pexelsKey();
+  if (!key) throw new Error("Falta la clave de Pexels: ponla en Ajustes → Fotos.");
   for (const query of photoQueries(title)) {
-    const candidate = (await search(query)).find((c) => !exclude.includes(c.sourceUrl));
-    if (!candidate) continue;
-    const res = await fetch(candidate.imageUrl, { headers: { "User-Agent": USER_AGENT }, cache: "no-store", signal: AbortSignal.timeout(15_000) });
+    const best = (await search(key, query))
+      .map((p, rank) => ({ p, score: brightScore(p.avg_color, rank) }))
+      .filter(({ p }) => !exclude.includes(p.url))
+      .sort((a, b) => b.score - a.score)[0]?.p;
+    if (!best) continue;
+    const res = await fetch(best.src.large2x, { cache: "no-store", signal: AbortSignal.timeout(15_000) });
     if (!res.ok) throw new Error(`No se ha podido descargar la foto (${res.status}).`);
     const stored = await storeImage(Buffer.from(await res.arrayBuffer()), title);
-    return { ...stored, alt: title, license: candidate.license, author: candidate.author, sourceUrl: candidate.sourceUrl };
+    return { ...stored, alt: title, license: "pexels", author: best.photographer.trim().slice(0, 120), sourceUrl: best.url };
   }
   return null;
 }

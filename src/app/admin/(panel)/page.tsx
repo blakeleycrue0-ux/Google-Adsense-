@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SEED_RECIPES } from "@/data/recetas-iniciales";
 import { listRecipes } from "@/lib/content";
 import { formatSmart, normalizeText, slugify } from "@/lib/format";
+import { needsAutoPhoto, pexelsKey } from "@/lib/free-photos";
 import { getSettings, validAdsenseClient } from "@/lib/settings";
 import { categoryName } from "@/lib/site";
 import { AutoPhotos } from "./AutoPhotos";
@@ -32,7 +33,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
 
   const existingTitles = new Set(recipes.map((r) => slugify(r.title)));
   const pendingSeeds = SEED_RECIPES.filter((r) => !existingTitles.has(slugify(r.title))).length;
-  const withoutPhoto = recipes.filter((r) => r.status === "private" && !r.photo).map((r) => ({ id: r.id, title: r.title }));
+  const withoutPhoto = recipes.filter((r) => needsAutoPhoto(r.photo)).map((r) => ({ id: r.id, title: r.title }));
 
   const tab = (id: string, label: string) => (
     <Link
@@ -63,7 +64,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
           </form>
         </section>
       )}
-      {withoutPhoto.length > 0 && <AutoPhotos items={withoutPhoto} />}
+      {withoutPhoto.length > 0 && <AutoPhotos items={withoutPhoto} hasKey={Boolean(await pexelsKey())} />}
 
       <section>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">

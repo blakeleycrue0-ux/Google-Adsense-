@@ -51,15 +51,15 @@ export function IngredientList({ groups }: { groups: { title: string; items: str
     <div className="space-y-5">
       {groups.map((g, gi) => (
         <div key={gi}>
-          {g.title && <h3 className="kicker mb-2 text-ink">{g.title}</h3>}
-          <ul className="divide-y divide-line border-y border-line">
+          {g.title && <h3 className="mb-1 mt-2 text-sm font-semibold text-ink">{g.title}</h3>}
+          <ul className="divide-y divide-line">
             {g.items.map((item, i) => {
               const key = `${gi}-${i}`;
               const checked = done.has(key);
               return (
                 <li key={key}>
                   <label className="flex cursor-pointer items-start gap-3 py-2.5">
-                    <input type="checkbox" checked={checked} onChange={() => toggle(key)} className="mt-1 size-4 shrink-0 accent-ink print:hidden" />
+                    <input type="checkbox" checked={checked} onChange={() => toggle(key)} className="mt-1 size-4 shrink-0 accent-sky print:hidden" />
                     <span className={checked ? "text-muted line-through" : ""}>{item}</span>
                   </label>
                 </li>

@@ -6,7 +6,7 @@ import { requireUser } from "@/lib/auth";
 import { getRecipe, listRecipes } from "@/lib/content";
 import { db, newId } from "@/lib/db";
 import { slugify } from "@/lib/format";
-import { findFreePhoto } from "@/lib/free-photos";
+import { findFreePhoto, needsAutoPhoto } from "@/lib/free-photos";
 import { publishProblems, uniqueSlug } from "@/lib/recipes";
 import { revalidateSite } from "@/lib/revalidate";
 import type { Recipe } from "@/lib/types";
@@ -38,15 +38,15 @@ export async function importSeedRecipes() {
 export type AutoPhotoResult = { ok: true; published: boolean } | { ok: false; error: string };
 
 /**
- * Pone a una receta sin foto una foto libre de Wikimedia Commons y, si se pide
- * y ya está completa, la publica. El panel la llama receta a receta para no
- * pasarse del límite de tiempo de Netlify.
+ * Pone a una receta sin foto (o con una de Wikimedia) una foto profesional de
+ * Pexels y, si se pide y ya está completa, la publica. El panel la llama receta
+ * a receta para no pasarse del límite de tiempo de Netlify.
  */
 export async function autoPhoto(id: string, publish: boolean): Promise<AutoPhotoResult> {
   await requireUser();
   const recipe = await getRecipe(id);
   if (!recipe) return { ok: false, error: "La receta ya no existe." };
-  if (recipe.photo) return { ok: true, published: recipe.status === "published" };
+  if (!needsAutoPhoto(recipe.photo)) return { ok: true, published: recipe.status === "published" };
   let photo;
   try {
     photo = await findFreePhoto(recipe.title);
@@ -61,6 +61,7 @@ export async function autoPhoto(id: string, publish: boolean): Promise<AutoPhoto
     updated.publishedAt ??= now;
   }
   await db().put("recipes", updated);
+  if (recipe.photo?.path) await db().deleteFile(recipe.photo.path).catch(() => undefined);
   revalidateSite();
   return { ok: true, published: updated.status === "published" };
 }

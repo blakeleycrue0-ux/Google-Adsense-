@@ -4,82 +4,65 @@ import { categoryName, difficultyName } from "@/lib/site";
 import type { Recipe } from "@/lib/types";
 import { PhotoImage } from "./PhotoFigure";
 
-/** Antetítulo en una línea: «POSTRES · 45 MIN · FÁCIL». */
-export function Kicker({ recipe, link }: { recipe: Recipe; link?: boolean }) {
+export const ClockIcon = ({ className = "size-3.5" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </svg>
+);
+
+/** «45 min · Fácil», con el icono del reloj. */
+export function Meta({ recipe, className = "" }: { recipe: Recipe; className?: string }) {
   const time = formatMinutes(totalMinutes(recipe));
-  const cat = link ? (
-    <Link href={`/recetas/${recipe.category}`} className="text-ink hover:underline">
-      {categoryName(recipe.category)}
-    </Link>
-  ) : (
-    <span className="text-ink">{categoryName(recipe.category)}</span>
-  );
   return (
-    <p className="kicker truncate text-muted">
-      {cat}
-      {time && <> · {time}</>}
-      {recipe.difficulty && <> · {difficultyName(recipe.difficulty)}</>}
+    <p className={`flex items-center gap-1.5 text-[13px] text-muted ${className}`}>
+      {time && (
+        <>
+          <ClockIcon />
+          <span>{time}</span>
+          <span aria-hidden>·</span>
+        </>
+      )}
+      <span>{difficultyName(recipe.difficulty)}</span>
     </p>
   );
 }
 
-/** Receta destacada: foto grande y título en grande. */
-export function LeadRecipe({ recipe }: { recipe: Recipe }) {
+/** Tarjeta: foto con esquinas redondeadas, categoría encima y título debajo. */
+export function RecipeCard({ recipe, priority }: { recipe: Recipe; priority?: boolean }) {
   return (
     <article className="group">
       <Link href={recipePath(recipe)} className="block">
-        {recipe.photo && (
-          <PhotoImage photo={recipe.photo} sizes="(min-width: 1024px) 720px, 100vw" priority className="-mx-4 mb-4 sm:mx-0 sm:rounded-sm" />
-        )}
-        <div className="space-y-2.5">
-          <Kicker recipe={recipe} />
-          <h2 className="headline text-[1.85rem] group-hover:underline group-hover:decoration-2 group-hover:underline-offset-4 sm:text-[2.6rem]">
-            {recipe.title}
-          </h2>
-          <p className="text-[1.05rem] leading-relaxed text-ink-2 sm:text-lg">{recipe.summary}</p>
+        <div className="relative">
+          {recipe.photo ? (
+            <PhotoImage
+              photo={recipe.photo}
+              sizes="(min-width: 1024px) 280px, 50vw"
+              priority={priority}
+              aspect="aspect-[4/5]"
+              className="rounded-2xl"
+              imgClassName="transition-transform duration-500 group-hover:scale-[1.04]"
+            />
+          ) : (
+            <div className="aspect-[4/5] rounded-2xl bg-surface" />
+          )}
+          <span className="absolute left-2.5 top-2.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-ink">
+            {categoryName(recipe.category)}
+          </span>
         </div>
+        <h3 className="mt-3 line-clamp-2 text-[15px] font-semibold leading-snug tracking-tight group-hover:text-sky-ink sm:text-base">{recipe.title}</h3>
+        <Meta recipe={recipe} className="mt-1" />
       </Link>
     </article>
   );
 }
 
-/**
- * Receta en listados. En el móvil: texto a la izquierda y miniatura a la
- * derecha. Desde tableta, en «card», foto arriba y texto debajo.
- */
-export function RecipeCard({ recipe, variant = "card" }: { recipe: Recipe; variant?: "card" | "row" }) {
-  const card = variant === "card";
+/** Rejilla: dos columnas en el móvil, cuatro en escritorio. */
+export function RecipeGrid({ recipes, priority }: { recipes: Recipe[]; priority?: boolean }) {
   return (
-    <article className="group">
-      <Link href={recipePath(recipe)} className={`flex gap-4 ${card ? "sm:flex-col sm:gap-3" : ""}`}>
-        {recipe.photo && (
-          <PhotoImage
-            photo={recipe.photo}
-            sizes={card ? "(min-width: 1024px) 360px, (min-width: 640px) 50vw, 112px" : "128px"}
-            aspect={card ? "aspect-square sm:aspect-[4/3]" : "aspect-square sm:aspect-[4/3]"}
-            className={`order-2 w-24 shrink-0 rounded-sm sm:w-32 ${card ? "sm:order-1 sm:w-full" : ""}`}
-          />
-        )}
-        <div className={`order-1 min-w-0 flex-1 space-y-1.5 ${card ? "sm:order-2" : ""}`}>
-          <Kicker recipe={recipe} />
-          <h3 className={`headline text-[1.08rem] group-hover:underline group-hover:underline-offset-2 ${card ? "sm:text-xl" : "sm:text-lg"}`}>
-            {recipe.title}
-          </h3>
-          <p className={`text-sm leading-relaxed text-ink-2 ${card ? "line-clamp-2 sm:line-clamp-3" : "line-clamp-2"}`}>{recipe.summary}</p>
-        </div>
-      </Link>
-    </article>
-  );
-}
-
-/** Rejilla: en el móvil lista con separadores; desde tableta, 2-3 columnas. */
-export function RecipeGrid({ recipes, cols = 3 }: { recipes: Recipe[]; cols?: 3 | 4 }) {
-  return (
-    <div
-      className={`grid divide-y divide-line sm:grid-cols-2 sm:gap-x-8 sm:gap-y-10 sm:divide-y-0 ${cols === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"} [&>*]:py-4 sm:[&>*]:py-0 [&>*:first-child]:pt-0`}
-    >
-      {recipes.map((r) => (
-        <RecipeCard key={r.id} recipe={r} />
+    <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:grid-cols-3 sm:gap-x-5 lg:grid-cols-4 lg:gap-x-6 lg:gap-y-10">
+      {recipes.map((r, i) => (
+        <RecipeCard key={r.id} recipe={r} priority={priority && i < 4} />
       ))}
     </div>
   );
@@ -87,10 +70,10 @@ export function RecipeGrid({ recipes, cols = 3 }: { recipes: Recipe[]; cols?: 3 
 
 export function SectionTitle({ children, href }: { children: React.ReactNode; href?: string }) {
   return (
-    <div className="mb-4 flex items-baseline justify-between border-t-[3px] border-ink pt-2.5">
-      <h2 className="text-lg font-extrabold uppercase tracking-wide">{children}</h2>
+    <div className="mb-5 flex items-end justify-between gap-4">
+      <h2 className="headline text-2xl sm:text-[1.75rem]">{children}</h2>
       {href && (
-        <Link href={href} className="text-sm text-muted hover:text-ink">
+        <Link href={href} className="shrink-0 text-sm font-medium text-sky-ink hover:underline">
           Ver todas →
         </Link>
       )}
@@ -99,5 +82,5 @@ export function SectionTitle({ children, href }: { children: React.ReactNode; hr
 }
 
 export function EmptyState({ children }: { children: React.ReactNode }) {
-  return <p className="border-y border-line px-6 py-14 text-center text-muted">{children}</p>;
+  return <p className="rounded-2xl bg-surface px-6 py-14 text-center text-muted">{children}</p>;
 }

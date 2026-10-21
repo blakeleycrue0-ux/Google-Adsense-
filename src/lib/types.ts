@@ -98,4 +98,6 @@ export interface Settings {
   /** Bloques manuales opcionales. Vacíos = solo anuncios automáticos. */
   slots: { home: string; article: string };
   searchConsoleVerification: string;
+  /** Clave de la API de Pexels para buscar fotos (solo se usa en el servidor). */
+  pexelsKey: string;
 }

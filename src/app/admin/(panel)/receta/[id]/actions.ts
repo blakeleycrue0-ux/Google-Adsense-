@@ -148,13 +148,13 @@ export async function uploadPhoto(form: FormData): Promise<UploadResult> {
 
 export type FreePhotoResult = { ok: true; photo: Photo } | { ok: false; error: string };
 
-/** Busca una foto libre para el plato; `exclude` son las ya propuestas, para dar otra distinta. */
+/** Busca una foto profesional (Pexels) para el plato; `exclude` son las ya propuestas, para dar otra distinta. */
 export async function suggestFreePhoto(title: string, exclude: string[]): Promise<FreePhotoResult> {
   await requireUser();
   if (title.trim().length < 3) return { ok: false, error: "Escribe primero el nombre de la receta." };
   try {
     const photo = await findFreePhoto(title.trim().slice(0, 140), exclude.slice(0, 50));
-    return photo ? { ok: true, photo } : { ok: false, error: "No he encontrado (más) fotos libres para este plato. Sube una tuya." };
+    return photo ? { ok: true, photo } : { ok: false, error: "No he encontrado (más) fotos para este plato. Sube una tuya." };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }

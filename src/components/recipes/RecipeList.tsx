@@ -1,41 +1,26 @@
-import Link from "next/link";
 import { Ad } from "@/components/ads/Ad";
-import { CATEGORIES } from "@/lib/site";
 import type { Recipe } from "@/lib/types";
 import { EmptyState, RecipeGrid } from "./RecipeCard";
 
-/** Listado de recetas (todas o una categoría) con los filtros de categoría. */
-export function RecipeList({ title, intro, recipes, current, empty }: { title: string; intro?: string; recipes: Recipe[]; current?: string; empty: string }) {
+/** Listado de recetas (todas o una categoría). Las categorías están en la cabecera. */
+export function RecipeList({ title, intro, recipes, empty }: { title: string; intro?: string; recipes: Recipe[]; empty: string }) {
   return (
     <>
-      <header className="mb-5 border-b-[3px] border-ink pb-3">
-        <h1 className="headline text-[2rem] sm:text-5xl">{title}</h1>
-        {intro && <p className="mt-2 text-ink-2">{intro}</p>}
+      <header className="mb-8 rounded-3xl bg-surface px-6 py-8 sm:px-10 sm:py-12">
+        <p className="text-[13px] font-medium text-muted">
+          {recipes.length} {recipes.length === 1 ? "receta" : "recetas"}
+        </p>
+        <h1 className="headline mt-1 text-[2rem] sm:text-5xl">{title}</h1>
+        {intro && <p className="mt-3 max-w-2xl leading-relaxed text-ink-2">{intro}</p>}
       </header>
-      <nav aria-label="Categorías" className="mb-8">
-        <ul className="flex flex-wrap gap-2 text-[13px] font-semibold">
-          <li>
-            <Chip href="/recetas" active={!current}>
-              Todas
-            </Chip>
-          </li>
-          {CATEGORIES.map((c) => (
-            <li key={c.id}>
-              <Chip href={`/recetas/${c.id}`} active={current === c.id}>
-                {c.name}
-              </Chip>
-            </li>
-          ))}
-        </ul>
-      </nav>
       {recipes.length ? (
         <>
-          <RecipeGrid recipes={recipes.slice(0, 9)} />
-          {recipes.length > 9 && (
+          <RecipeGrid recipes={recipes.slice(0, 8)} priority />
+          {recipes.length > 8 && (
             <>
               <Ad slot="home" className="my-10" />
-              <div className="border-t border-line pt-5 sm:border-0 sm:pt-0">
-                <RecipeGrid recipes={recipes.slice(9, 120)} />
+              <div className="mt-7 lg:mt-10">
+                <RecipeGrid recipes={recipes.slice(8, 120)} />
               </div>
             </>
           )}
@@ -44,17 +29,5 @@ export function RecipeList({ title, intro, recipes, current, empty }: { title: s
         <EmptyState>{empty}</EmptyState>
       )}
     </>
-  );
-}
-
-function Chip({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
-  return (
-    <Link
-      href={href}
-      aria-current={active ? "page" : undefined}
-      className={`block rounded-full border px-3.5 py-2 ${active ? "border-ink bg-ink text-white" : "border-line text-ink-2 hover:border-ink hover:text-ink"}`}
-    >
-      {children}
-    </Link>
   );
 }

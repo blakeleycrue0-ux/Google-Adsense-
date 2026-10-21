@@ -270,7 +270,7 @@ export function Editor({ recipe, defaultAuthor, aiEnabled, flash }: { recipe: Re
                   Cambiar
                 </button>
                 <button type="button" onClick={findPhoto} disabled={searching} className="btn btn-ghost flex-1 text-sm">
-                  {searching ? "Buscando…" : "Otra foto libre"}
+                  {searching ? "Buscando…" : "Otra foto"}
                 </button>
                 <button type="button" onClick={() => setPhoto(null)} className="btn btn-ghost flex-1 text-sm">
                   Quitar
@@ -289,7 +289,7 @@ export function Editor({ recipe, defaultAuthor, aiEnabled, flash }: { recipe: Re
           )}
           {!photo && (
             <button type="button" onClick={findPhoto} disabled={searching} className="btn btn-ghost w-full text-sm">
-              {searching ? "Buscando foto libre…" : "🔎 Buscar una foto libre (Wikimedia Commons)"}
+              {searching ? "Buscando foto…" : "🔎 Buscar foto profesional (Pexels)"}
             </button>
           )}
           <input ref={fileRef} type="file" accept="image/*" onChange={onFile} className="hidden" />
