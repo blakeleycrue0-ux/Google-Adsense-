@@ -26,6 +26,12 @@ export const getSettings = cache(async (): Promise<Settings> => {
     .getSettings()
     .catch(() => null);
   const s = { ...DEFAULT_SETTINGS, ...stored, slots: { ...DEFAULT_SETTINGS.slots, ...stored?.slots } };
+  // Datos del titular: si no se han escrito en Ajustes, se toman de las variables de
+  // entorno de Netlify (así no quedan en el repositorio, que es público).
+  s.ownerName ||= process.env.OWNER_NAME ?? "";
+  s.ownerNif ||= process.env.OWNER_NIF ?? "";
+  s.ownerAddress ||= process.env.OWNER_ADDRESS ?? "";
+  s.contactEmail ||= process.env.CONTACT_EMAIL ?? "";
   // La web empezó como diario de noticias: si sigue guardado aquel nombre, se usa el nuevo.
   if (!s.siteName || LEGACY_SITE_NAMES.includes(s.siteName)) s.siteName = DEFAULT_SITE_NAME;
   if (!s.tagline || LEGACY_TAGLINES.includes(s.tagline)) s.tagline = DEFAULT_TAGLINE;

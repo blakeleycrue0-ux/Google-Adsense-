@@ -17,7 +17,7 @@ export default async function LegalNoticePage() {
           <strong>Titular:</strong> <OwnerField value={s.ownerName} />
         </li>
         <li>
-          <strong>NIF:</strong> <OwnerField value={s.ownerNif} />
+          <strong>NIF/NIE:</strong> <OwnerField value={s.ownerNif} />
         </li>
         <li>
           <strong>Domicilio:</strong> <OwnerField value={s.ownerAddress} />
@@ -39,13 +39,18 @@ export default async function LegalNoticePage() {
         fotografías indican en cada caso su autor y licencia; las de terceros se usan conforme a su licencia o con permiso de quien las difunde.
       </p>
       <p>
-        Si eres titular de algún contenido y crees que se ha usado de forma indebida, escríbenos a <ContactEmail s={s} /> y lo revisaremos de
+        Si eres titular de algún contenido y crees que se ha usado de forma indebida, escríbeme a <ContactEmail s={s} /> y lo revisaré de
         inmediato.
       </p>
       <h2>Responsabilidad</h2>
       <p>
         Las recetas se publican con la mayor atención posible, pero cada persona debe tener en cuenta sus alergias, intolerancias y las normas
         básicas de higiene y seguridad en la cocina. No me hago responsable del contenido de las webs externas enlazadas.
+      </p>
+      <h2>Condiciones de uso</h2>
+      <p>
+        Al usar esta web aceptas utilizarla de forma lícita y no copiar sus contenidos de forma masiva ni con fines comerciales sin permiso. El
+        titular puede modificar los contenidos y este aviso en cualquier momento.
       </p>
       <h2>Legislación aplicable</h2>
       <p>Este aviso se rige por la legislación española.</p>

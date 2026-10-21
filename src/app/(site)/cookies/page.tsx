@@ -7,8 +7,9 @@ export default function CookiesPage() {
   return (
     <InfoPage title="Política de cookies">
       <p>
-        Las cookies son pequeños archivos que una web guarda en tu navegador. Esta web no usa cookies propias para seguirte; las únicas que se
-        instalan son las de terceros que se describen aquí, y solo después de que des tu consentimiento en el mensaje de privacidad.
+        Las cookies son pequeños archivos que una web guarda en tu navegador. Esta web no usa cookies propias para seguirte. Las de publicidad
+        son de terceros, se describen aquí y solo se instalan después de que des tu consentimiento en el mensaje de privacidad. Mientras la
+        publicidad no esté activa, a los visitantes no se les instala ninguna cookie.
       </p>
       <h2>Cookies que se usan</h2>
       <table>
