@@ -36,10 +36,10 @@ export const getSettings = cache(async (): Promise<Settings> => {
   // La web empezó como diario de noticias: si sigue guardado aquel nombre, se usa el nuevo.
   if (!s.siteName || LEGACY_SITE_NAMES.includes(s.siteName)) s.siteName = DEFAULT_SITE_NAME;
   if (!s.tagline || LEGACY_TAGLINES.includes(s.tagline)) s.tagline = DEFAULT_TAGLINE;
-  // Si la dirección guardada es la de un nombre anterior de Netlify (*.netlify.app distinto
-  // del actual), se usa la actual: Netlify la da en URL y no deja de funcionar al renombrar.
+  // Si la dirección guardada es una *.netlify.app y Netlify da otra (un nombre nuevo o el
+  // dominio propio, lalibretadelfogon.es), se usa la de Netlify: la guardada ya no es la buena.
   const current = process.env.URL;
-  if (current && /\.netlify\.app$/.test(new URL(s.siteUrl).hostname) && new URL(current).hostname.endsWith(".netlify.app") && new URL(s.siteUrl).hostname !== new URL(current).hostname) {
+  if (current && /\.netlify\.app$/.test(new URL(s.siteUrl).hostname) && new URL(s.siteUrl).hostname !== new URL(current).hostname) {
     s.siteUrl = current;
   }
   return s;
