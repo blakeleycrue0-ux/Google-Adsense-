@@ -6,7 +6,7 @@ import { DeleteButton, Editor } from "./Editor";
 import { deleteRecipe } from "./actions";
 
 export default async function RecipeEditorPage({ params, searchParams }: PageProps<"/admin/receta/[id]">) {
-  const user = await requireUser();
+  await requireUser();
   const { id } = await params;
   const { ok } = await searchParams;
   const recipe = id === "nueva" ? null : await getRecipe(id);
@@ -25,7 +25,7 @@ export default async function RecipeEditorPage({ params, searchParams }: PagePro
       <Editor
         key={recipe?.id ?? "nueva"}
         recipe={recipe}
-        defaultAuthor={user.name}
+        defaultAuthor=""
         aiEnabled={Boolean(process.env.ANTHROPIC_API_KEY)}
         flash={typeof ok === "string" ? ok : undefined}
       />

@@ -25,10 +25,17 @@ export async function login(_: LoginState, form: FormData): Promise<LoginState> 
   }
   let user = users.find((u) => u.email.toLowerCase() === email);
 
-  // Arranque: si aún no hay cuentas, se acepta la definida en las variables de entorno.
-  if (!users.length && process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
-    if (email === process.env.ADMIN_EMAIL.toLowerCase() && password === process.env.ADMIN_PASSWORD) {
+  // La cuenta de ADMIN_EMAIL entra siempre con ADMIN_PASSWORD (variables de Netlify):
+  // la primera vez se crea y, si la contraseña de Netlify cambió, se actualiza la
+  // guardada, de modo que la anterior deja de valer.
+  const envEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const envPassword = process.env.ADMIN_PASSWORD;
+  if (envEmail && envPassword && email === envEmail && password === envPassword) {
+    if (!user) {
       user = { id: newId("usr_"), email, name: email.split("@")[0], passwordHash: await hashPassword(password), createdAt: new Date().toISOString() };
+      await db().put("users", user);
+    } else if (!(await verifyPassword(password, user.passwordHash))) {
+      user = { ...user, passwordHash: await hashPassword(password) };
       await db().put("users", user);
     }
   }

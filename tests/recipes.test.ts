@@ -67,3 +67,19 @@ describe("normalización", () => {
     expect(r.category).toBe("entrantes");
   });
 });
+
+describe("recetas iniciales", () => {
+  it("todas están completas salvo la foto, sin marcas pendientes y con títulos únicos", async () => {
+    const { SEED_RECIPES } = await import("@/data/recetas-iniciales");
+    const { slugify } = await import("@/lib/format");
+    const { isCategory } = await import("@/lib/site");
+    const photo: Photo = { url: "/u/a.webp", width: 1, height: 1, alt: "", license: "own", author: "" };
+    expect(SEED_RECIPES.length).toBeGreaterThanOrEqual(30);
+    expect(new Set(SEED_RECIPES.map((r) => slugify(r.title))).size).toBe(SEED_RECIPES.length);
+    for (const r of SEED_RECIPES) {
+      expect(publishProblems({ ...r, photo }), r.title).toEqual([]);
+      expect(isCategory(r.category), r.title).toBe(true);
+      expect(JSON.stringify(r)).not.toMatch(/\[REVISAR|​/);
+    }
+  });
+});

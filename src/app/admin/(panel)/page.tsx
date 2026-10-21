@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { SEED_RECIPES } from "@/data/recetas-iniciales";
 import { listRecipes } from "@/lib/content";
-import { formatSmart, normalizeText } from "@/lib/format";
+import { formatSmart, normalizeText, slugify } from "@/lib/format";
 import { getSettings, validAdsenseClient } from "@/lib/settings";
 import { categoryName } from "@/lib/site";
+import { importSeedRecipes } from "./actions";
 
 const GOAL = 20;
 
@@ -27,6 +29,10 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
     { ok: validAdsenseClient(s.adsenseClient), label: "ID de editor de AdSense (ca-pub-…)" },
   ];
 
+  const existingTitles = new Set(recipes.map((r) => slugify(r.title)));
+  const pendingSeeds = SEED_RECIPES.filter((r) => !existingTitles.has(slugify(r.title))).length;
+  const withoutPhoto = recipes.filter((r) => r.status === "private" && !r.photo).length;
+
   const tab = (id: string, label: string) => (
     <Link
       href={id === "todas" ? "/admin" : `/admin?ver=${id}`}
@@ -39,6 +45,28 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
   return (
     <div className="space-y-8">
       {sp.borrada && <p className="rounded-md bg-paper p-3 text-sm">Receta eliminada.</p>}
+      {typeof sp.importadas === "string" && (
+        <p className="rounded-md bg-[#e7f6ec] p-3 text-sm text-ok">
+          Añadidas {sp.importadas} recetas como privadas. Abre cada una, sube su foto, revísala y pulsa «Publicar».
+        </p>
+      )}
+
+      {pendingSeeds > 0 && (
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-paper p-4">
+          <p className="text-sm text-ink-2">
+            <strong className="text-ink">{pendingSeeds} recetas clásicas listas</strong> (tortilla, paella, lentejas, flan…). Se añaden como privadas y
+            sin foto: tú les pones la foto y las publicas.
+          </p>
+          <form action={importSeedRecipes}>
+            <button className="btn btn-primary">Añadir recetas</button>
+          </form>
+        </section>
+      )}
+      {withoutPhoto > 0 && (
+        <p className="text-sm text-muted">
+          📷 {withoutPhoto} {withoutPhoto === 1 ? "receta privada espera" : "recetas privadas esperan"} su foto para poder publicarse.
+        </p>
+      )}
 
       <section>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
