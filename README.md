@@ -1,6 +1,6 @@
-# Recetario: web de recetas con panel privado
+# La Libreta del Fogón: web de recetas con panel privado
 
-> «Recetario» es un nombre provisional. Se cambia en **Panel → Ajustes**.
+> El nombre y el lema se cambian en **Panel → Ajustes**.
 
 Web personal de recetas de cocina, preparada para Google AdSense. Desde un panel privado (que funciona en el móvil) guardas tus recetas. Cada una puede ser **privada**, solo para ti, o **publicada** en la web.
 

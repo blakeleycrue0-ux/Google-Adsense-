@@ -2,11 +2,11 @@
  * Datos fijos de la web. El nombre, el lema, el texto «Sobre mí» y los datos
  * del titular se cambian en el panel (Ajustes); estos son los valores iniciales.
  */
-export const DEFAULT_SITE_NAME = "Recetario";
-export const DEFAULT_TAGLINE = "Recetas de cocina explicadas paso a paso";
+export const DEFAULT_SITE_NAME = "La Libreta del Fogón";
+export const DEFAULT_TAGLINE = "Recetas caseras, paso a paso, como en mi libreta";
 /** Valores de etapas anteriores de la web: si siguen guardados, se usan los nuevos. */
-export const LEGACY_SITE_NAMES = ["Brisa Balear"];
-export const LEGACY_TAGLINES = ["Noticias de Mallorca, Menorca, Ibiza y Formentera"];
+export const LEGACY_SITE_NAMES = ["Brisa Balear", "Recetario"];
+export const LEGACY_TAGLINES = ["Noticias de Mallorca, Menorca, Ibiza y Formentera", "Recetas de cocina explicadas paso a paso"];
 
 export const CATEGORIES = [
   { id: "entrantes", name: "Entrantes y tapas", description: "Para empezar o para picar: tapas, ensaladas, cremas frías y aperitivos." },

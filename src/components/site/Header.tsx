@@ -28,7 +28,7 @@ export function Header({ siteName, tagline }: { siteName: string; tagline: strin
       <header className="sticky top-0 z-40 border-b border-line bg-paper lg:hidden print:hidden">
         <div className="container-x flex h-14 items-center justify-between">
           <MobileMenu />
-          <Logo name={siteName} className="text-[1.6rem]" />
+          <Logo name={siteName} className="min-w-0 truncate px-2 text-[1.35rem] sm:text-[1.6rem]" />
           <Link href="/buscar" className="-mr-2 grid size-11 place-items-center rounded-md hover:bg-surface" aria-label="Buscar recetas">
             <SearchIcon />
           </Link>
