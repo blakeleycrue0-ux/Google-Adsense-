@@ -148,7 +148,7 @@ export async function uploadPhoto(form: FormData): Promise<UploadResult> {
 
 export type FreePhotoResult = { ok: true; photo: Photo } | { ok: false; error: string };
 
-/** Busca una foto profesional (Pexels) para el plato; `exclude` son las ya propuestas, para dar otra distinta. */
+/** Busca una foto profesional (Pixabay) para el plato; `exclude` son las ya propuestas, para dar otra distinta. */
 export async function suggestFreePhoto(title: string, exclude: string[]): Promise<FreePhotoResult> {
   await requireUser();
   if (title.trim().length < 3) return { ok: false, error: "Escribe primero el nombre de la receta." };

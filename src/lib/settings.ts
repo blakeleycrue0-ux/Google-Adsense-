@@ -19,7 +19,7 @@ export const DEFAULT_SETTINGS: Settings = {
   adsEnabled: false,
   slots: { home: "", article: "" },
   searchConsoleVerification: "",
-  pexelsKey: "",
+  pixabayKey: "",
 };
 
 export const getSettings = cache(async (): Promise<Settings> => {

@@ -1,7 +1,7 @@
 import { slugify } from "@/lib/format";
 
 /**
- * Qué buscar en Pexels para la foto de cada receta inicial (por título), de
+ * Qué buscar en Pixabay para la foto de cada receta inicial (por título), de
  * más concreta a más general. En inglés, que es como está etiquetado casi todo.
  */
 const BY_TITLE: Record<string, string[]> = {

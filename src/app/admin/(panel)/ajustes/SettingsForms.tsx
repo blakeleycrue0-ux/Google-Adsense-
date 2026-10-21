@@ -55,18 +55,19 @@ export function SettingsForm({ s }: { s: Settings }) {
 
       <Card title="Fotos">
         <Field
-          label={s.pexelsKey ? "Clave de Pexels (guardada ✔)" : "Clave de Pexels"}
-          name="pexelsKey"
+          label={s.pixabayKey ? "Clave de Pixabay (guardada ✔)" : "Clave de Pixabay"}
+          name="pixabayKey"
           type="password"
           autoComplete="off"
-          placeholder={s.pexelsKey ? "•••••••• (escribe otra solo para cambiarla)" : "Pega aquí tu clave"}
+          placeholder={s.pixabayKey ? "•••••••• (escribe otra solo para cambiarla)" : "Pega aquí tu clave"}
           hint={
             <>
               Gratis: entra en{" "}
-              <a href="https://www.pexels.com/api/new/" target="_blank" rel="noopener noreferrer" className="underline">
-                pexels.com/api
+              <a href="https://pixabay.com/api/docs/" target="_blank" rel="noopener noreferrer" className="underline">
+                pixabay.com/api/docs
               </a>
-              , crea la cuenta, rellena el formulario y copia «Your API Key». Con ella el panel pone fotos profesionales a las recetas.
+              , crea la cuenta (gratis) y vuelve a esa página: tu clave sale en el apartado «Search Images», junto a «key». Con ella el panel pone fotos
+              profesionales a las recetas.
             </>
           }
         />

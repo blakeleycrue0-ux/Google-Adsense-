@@ -41,6 +41,7 @@ export const PHOTO_LICENSES = {
   cc0: { label: "Dominio público / CC0", needsAuthor: false },
   unsplash: { label: "Unsplash", needsAuthor: true },
   pexels: { label: "Pexels", needsAuthor: true },
+  pixabay: { label: "Pixabay", needsAuthor: true },
   press: { label: "Cedida con permiso (marca, restaurante…)", needsAuthor: true },
 } as const;
 

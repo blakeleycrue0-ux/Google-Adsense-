@@ -39,7 +39,7 @@ export type AutoPhotoResult = { ok: true; published: boolean } | { ok: false; er
 
 /**
  * Pone a una receta sin foto (o con una de Wikimedia) una foto profesional de
- * Pexels y, si se pide y ya está completa, la publica. El panel la llama receta
+ * Pixabay y, si se pide y ya está completa, la publica. El panel la llama receta
  * a receta para no pasarse del límite de tiempo de Netlify.
  */
 export async function autoPhoto(id: string, publish: boolean): Promise<AutoPhotoResult> {

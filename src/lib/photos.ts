@@ -17,6 +17,8 @@ export function photoCredit(p: Pick<Photo, "license" | "author">) {
       return author ? `Foto: ${author} (dominio público)` : "Foto: dominio público";
     case "unsplash":
       return `Foto: ${author} / Unsplash`;
+    case "pixabay":
+      return `Foto: ${author} / Pixabay`;
     case "pexels":
       return `Foto: ${author} / Pexels`;
   }

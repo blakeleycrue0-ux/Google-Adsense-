@@ -2,7 +2,7 @@ import Link from "next/link";
 import { SEED_RECIPES } from "@/data/recetas-iniciales";
 import { listRecipes } from "@/lib/content";
 import { formatSmart, normalizeText, slugify } from "@/lib/format";
-import { needsAutoPhoto, pexelsKey } from "@/lib/free-photos";
+import { needsAutoPhoto, pixabayKey } from "@/lib/free-photos";
 import { getSettings, validAdsenseClient } from "@/lib/settings";
 import { categoryName } from "@/lib/site";
 import { AutoPhotos } from "./AutoPhotos";
@@ -64,7 +64,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
           </form>
         </section>
       )}
-      {withoutPhoto.length > 0 && <AutoPhotos items={withoutPhoto} hasKey={Boolean(await pexelsKey())} />}
+      {withoutPhoto.length > 0 && <AutoPhotos items={withoutPhoto} hasKey={Boolean(await pixabayKey())} />}
 
       <section>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">

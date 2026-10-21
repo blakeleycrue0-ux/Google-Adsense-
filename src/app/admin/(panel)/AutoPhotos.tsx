@@ -6,7 +6,7 @@ import { autoPhoto } from "./actions";
 
 type Item = { id: string; title: string };
 
-/** Pone fotos profesionales (Pexels) a las recetas sin foto, de dos en dos. */
+/** Pone fotos profesionales (Pixabay) a las recetas sin foto, de dos en dos. */
 export function AutoPhotos({ items, hasKey }: { items: Item[]; hasKey: boolean }) {
   const router = useRouter();
   const [publish, setPublish] = useState(true);
@@ -40,11 +40,11 @@ export function AutoPhotos({ items, hasKey }: { items: Item[]; hasKey: boolean }
         <strong className="text-ink">
           📷 {items.length} {items.length === 1 ? "receta necesita foto" : "recetas necesitan foto"}.
         </strong>{" "}
-        Les busco una foto profesional en Pexels (uso libre, con el nombre del fotógrafo). Si alguna no te gusta, ábrela y pulsa «Otra foto».
+        Les busco una foto profesional en Pixabay (uso libre, con el nombre del fotógrafo). Si alguna no te gusta, ábrela y pulsa «Otra foto».
       </p>
       {!hasKey && (
         <p className="rounded-md bg-surface p-3 text-sm">
-          Antes, pega tu clave gratuita de Pexels en{" "}
+          Antes, pega tu clave gratuita de Pixabay en{" "}
           <a href="/admin/ajustes" className="font-semibold underline">
             Ajustes → Fotos
           </a>
