@@ -28,7 +28,7 @@ function Status({ state }: { state: { ok: boolean; message: string } | null }) {
   return <p className={`rounded p-2 text-sm ${state.ok ? "bg-[#e7f6ec] text-ok" : "bg-[#fdecea] text-live"}`}>{state.message}</p>;
 }
 
-export function SettingsForm({ s }: { s: Settings }) {
+export function SettingsForm({ s, photoKeySet }: { s: Settings; photoKeySet: boolean }) {
   const [state, action, pending] = useActionState(saveSettings, null);
   return (
     <form action={action} className="space-y-6">
@@ -55,11 +55,11 @@ export function SettingsForm({ s }: { s: Settings }) {
 
       <Card title="Fotos">
         <Field
-          label={s.pixabayKey ? "Clave de Pixabay (guardada ✔)" : "Clave de Pixabay"}
+          label={photoKeySet ? "Clave de Pixabay (puesta ✔)" : "Clave de Pixabay"}
           name="pixabayKey"
           type="password"
           autoComplete="off"
-          placeholder={s.pixabayKey ? "•••••••• (escribe otra solo para cambiarla)" : "Pega aquí tu clave"}
+          placeholder={photoKeySet ? "•••••••• (escribe otra solo para cambiarla)" : "Pega aquí tu clave"}
           hint={
             <>
               Gratis: entra en{" "}
