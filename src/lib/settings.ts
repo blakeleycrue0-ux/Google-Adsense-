@@ -33,6 +33,8 @@ export const getSettings = cache(async (): Promise<Settings> => {
   s.ownerNif ||= process.env.OWNER_NIF ?? "";
   s.ownerAddress ||= process.env.OWNER_ADDRESS ?? "";
   s.contactEmail ||= process.env.CONTACT_EMAIL ?? "";
+  // Código de verificación de Google Search Console (también se puede poner en Ajustes).
+  s.searchConsoleVerification ||= process.env.GOOGLE_SITE_VERIFICATION ?? "";
   // La web empezó como diario de noticias: si sigue guardado aquel nombre, se usa el nuevo.
   if (!s.siteName || LEGACY_SITE_NAMES.includes(s.siteName)) s.siteName = DEFAULT_SITE_NAME;
   if (!s.tagline || LEGACY_TAGLINES.includes(s.tagline)) s.tagline = DEFAULT_TAGLINE;
